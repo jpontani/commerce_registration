@@ -1,0 +1,114 @@
+<?php
+
+function commerce_registration_commerce_checkout_page_info() {
+  $pages = array();
+  $pages['registration'] = array(
+    'name' => t('Registration'),
+    'title' => t('Registration Information'),
+    'weight' => 5,
+    'status_cart' => TRUE,
+    'buttons' => TRUE,
+  );
+  return $pages;
+}
+
+function commerce_registration_commerce_checkout_pane_info() {
+  $panes = array();
+  $panes['registration_information'] = array(
+    'title' => t('Registration Information'),
+    'base' => 'commerce_registration_information',
+    'page' => 'registration',
+  );
+  return $panes;
+}
+
+function commerce_registration_information_checkout_form($form, &$form_state, $checkout_pane, $order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $registrations = array();
+  $form = array();
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $type = $line_item_wrapper->commerce_product->type->value();
+    $can_register = (int) variable_get('registration_commerce_product:' . $type . '_status', 0);
+    if ($can_register == 1) {
+      $registrations[] = array(
+        'product' => $line_item_wrapper->commerce_product,
+        'quantity' => $line_item_wrapper->quantity->value(),
+        'registration' => variable_get('registration_commerce_product:' . $type . '_bundle', ''),
+      );
+    }
+  }
+  if (!empty($registrations)) {
+    // build form stuff for registrations on each product that is register
+    // enabled
+    $form['registration'] = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('registrations'),
+      ),
+    );
+    foreach ($registrations as $registration) {
+      $product = $registration['product'];
+      $quantity = (int) $registration['quantity'];
+      for ($i=0; $i<$quantity; $i++) {
+        $label = $i+1;
+        $form['registration']['prod-' . $product->sku->value()]['reg-' . $i] = array(
+          '#type' => 'fieldset',
+          '#title' => $product->title->value() . ' #' . $label,
+          '#collapsible' => TRUE,
+        );
+        watchdog('commerce registration', $registration['registration']);
+        $entity = entity_get_controller('registration')->create(array('type' => $registration['registration']));
+        $entity->entity_type = 'commerce_product';
+        $entity->entity_bundle = $product->type->value();
+        $entity->eid = $product->product_id->value();
+        $form['registration']['prod-' . $product->sku->value()]['reg-' . $i]['entity-' . $i] = array(
+          '#type' => 'value',
+          '#value' => $entity,
+        );
+        field_attach_form('registration', $entity, $form['registration']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
+      }
+    }
+  }
+  else {
+    // no registration enabled products, so we proceed to next step of the
+    // checkout form
+  }
+  return $form;
+}
+
+/**
+ * Commerce checkout pane form validation callback.
+ */
+function commerce_registration_information_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $registrations = array();
+  $form = array();
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $type = $line_item_wrapper->commerce_product->type->value();
+    $can_register = (int) variable_get('registration_commerce_product:' . $type . '_status', 0);
+    if ($can_register == 1) {
+      $registrations[] = array(
+        'product' => $line_item_wrapper->commerce_product,
+        'quantity' => $line_item_wrapper->quantity->value(),
+        'registration' => variable_get('registration_commerce_product:' . $type . '_bundle', ''),
+      );
+    }
+  }
+  if (!empty($registrations)) {
+    // we need to validate the fields
+    foreach ($registrations as $registration) {
+      $product = $registration['product'];
+      $quantity = (int) $registration['quantity'];
+      for ($i=0; $i<$quantity; $i++) {
+        $entity = $form_state['values']['entity-' . $i];
+        field_attach_form_validate('registration', $entity, $form['registration']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
+      }
+    }
+  }
+}
+
+function commerce_registration_information_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
+}
+
+function commerce_registration_information_review($form, $form_state, $checkout_pane, $order) {
+}

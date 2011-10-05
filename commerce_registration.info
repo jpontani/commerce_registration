@@ -1,0 +1,7 @@
+name = Commerce Registration Integration
+description = Registration integration for Drupal Commerce.
+package = Commerce (contrib)
+core = 7.x
+
+dependencies[] = commerce
+dependencies[] = registration
