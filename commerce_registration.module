@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Implements hook_commerce_checkout_page_info().
+ */
 function commerce_registration_commerce_checkout_page_info() {
   $pages = array();
   $pages['registration'] = array(
@@ -11,7 +14,9 @@ function commerce_registration_commerce_checkout_page_info() {
   );
   return $pages;
 }
-
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
 function commerce_registration_commerce_checkout_pane_info() {
   $panes = array();
   $panes['registration_information'] = array(
@@ -22,10 +27,13 @@ function commerce_registration_commerce_checkout_pane_info() {
   return $panes;
 }
 
+/**
+ * Commerce checkout pane form builder callback.
+ */
 function commerce_registration_information_checkout_form($form, &$form_state, $checkout_pane, $order) {
   global $user;
+  $show_form = FALSE;
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  $registrations = array();
   if (empty($form)) {
     $form = array();
   }
@@ -33,33 +41,18 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
     $type = $line_item_wrapper->commerce_product->type->value();
     $can_register = (int) variable_get('registration_commerce_product:' . $type . '_status', 0);
     if ($can_register == 1) {
-      $registrations[] = array(
-        'product' => $line_item_wrapper->commerce_product,
-        'quantity' => $line_item_wrapper->quantity->value(),
-        'registration' => variable_get('registration_commerce_product:' . $type . '_bundle', ''),
-      );
-    }
-  }
-  if (!empty($registrations)) {
-    // build form stuff for registrations on each product that is register
-    // enabled
-    $form['registration'] = array(
-      '#type' => 'container',
-      '#attributes' => array(
-        'class' => array('registrations'),
-      ),
-    );
-    foreach ($registrations as $registration) {
-      $product = $registration['product'];
-      $quantity = (int) $registration['quantity'];
+      $show_form = TRUE;
+      $product = $line_item_wrapper->commerce_product;
+      $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $label = $i+1;
-        $form['registration']['prod-' . $product->sku->value()]['reg-' . $i] = array(
+        $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i] = array(
           '#type' => 'fieldset',
           '#title' => $product->title->value() . ' #' . $label,
           '#collapsible' => TRUE,
         );
-        $entity = entity_get_controller('registration')->create(array('type' => $registration['registration']));
+        $entity = entity_get_controller('registration')->create(array('type' => variable_get('registration_commerce_product:' . $type . '_bundle', '')));
+        $entity->bundle = $entity->type;
         $entity->entity_type = 'commerce_product';
         $entity->entity_bundle = $product->type->value();
         $entity->eid = $product->product_id->value();
@@ -67,19 +60,18 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         $entity->created = REQUEST_TIME;
         $entity->updated = REQUEST_TIME;
         $entity->author_uid = $user->uid;
-        $form['registration']['prod-' . $product->sku->value()]['reg-' . $i]['entity-' . $i] = array(
+        $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]['entity-' . $i] = array(
           '#type' => 'value',
           '#value' => $entity,
         );
-        field_attach_form('registration', $entity, $form['registration']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
+        field_attach_form('registration', $entity, $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
       }
     }
-    return $form;
   }
-  else {
-    // no registration enabled products, so we proceed to next step of the
-    // checkout form
+  if (!$show_form) {
+    // no register enabled products, so go to next step of checkout process
   }
+  return $form;
 }
 
 /**
@@ -95,12 +87,15 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $form_state['values']['entity-' . $i];
-        field_attach_form_validate('registration', $entity, $form['registration']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
+        field_attach_form_validate('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
       }
     }
   }
 }
 
+/**
+ * Commerce checkout pane form submit callback.
+ */
 function commerce_registration_information_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
@@ -112,11 +107,14 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       for ($i=0; $i<$quantity; $i++) {
         $entity = $form_state['values']['entity-' . $i];
         $entity->save;
-        field_attach_submit('registration', $entity, $form['registration']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
+        field_attach_submit('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
       }
     }
   }
 }
 
+/**
+ * Commerce checkout pane review callback.
+ */
 function commerce_registration_information_review($form, $form_state, $checkout_pane, $order) {
 }
