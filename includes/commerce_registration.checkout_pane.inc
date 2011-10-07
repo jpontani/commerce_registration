@@ -70,6 +70,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       }
     }
   }
+  return TRUE;
 }
 
 /**
@@ -86,7 +87,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       for ($i=0; $i<$quantity; $i++) {
         $entity = $form_state['values']['entity-' . $i];
         $entity->save();
-        field_attach_submit('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['reg-' . $i], $form_state);
+        field_attach_submit('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
       }
     }
   }
