@@ -76,7 +76,6 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
  * Commerce checkout pane form submit callback.
  */
 function commerce_registration_information_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
-  watchdog('commerce registration', 'checkout submit');
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
