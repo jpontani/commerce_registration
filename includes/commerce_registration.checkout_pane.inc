@@ -30,15 +30,15 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           '#type' => 'fieldset',
           '#title' => $product->title->value() . ' #' . $label,
           '#collapsible' => TRUE,
+          '#tree' => TRUE,
         );
         $entity = NULL;
-        if ($find_values) {
-          $entity = &$order->data['register_entities']['prod-' . $product->sku->value()][$i];
-          $entity->status = -2;
+        if ($find_values && !empty($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
+          $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
           field_attach_load('registration', array($entity->registration_id => $entity));
         }
         else {
-          $entity = entity_get_controller('registration')->create(array('type' => variable_get('registration_commerce_product:' . $type . '_bundle', '')));
+          $entity = entity_create('registration', array('type' => variable_get('registration_commerce_product:' . $type . '_bundle', '')));
           $entity->bundle = $entity->type;
           $entity->entity_type = 'commerce_product';
           $entity->entity_bundle = $product->type->value();
@@ -46,16 +46,17 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->created = REQUEST_TIME;
           $entity->updated = REQUEST_TIME;
           $entity->author_uid = $user->uid;
-          $entity->status = -1;
+          $entity->status = 0;
         }
         field_attach_form('registration', $entity, $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
         $fields = &$form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i];
         foreach ($fields as $key => $data) {
           if (is_array($data) && substr($key, 0, 1) != '#') {
-            $fields[$key]['#parents'] = array('prod-' . $product->sku->value(), 'prod-' . $product->sku->value() . '-reg-' . $i);
+            $fields[$key]['#parents'] = array('registration_information', 'prod-' . $product->sku->value(), 'prod-' . $product->sku->value() . '-reg-' . $i, $key);
           }
         }
         $order->data['register_entities']['prod-' . $product->sku->value()][$i] = $entity;
+        unset($entity);
       }
     }
   }
@@ -98,20 +99,10 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
-        $entity = &$order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        $entity->save();
-        field_attach_load('registration', array($entity->registration_id => $entity));
+        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
         field_attach_submit('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
-        if ($entity->status == -1) {
-          // new entity, so insert
-          field_attach_insert('registration', $entity);
-          $entity->save();
-          watchdog('commerce registration', 'insert ' . serialize($entity));
-        }
-        elseif ($entity->status == -2) {
-          field_attach_update('registration', $entity);
-          watchdog('commerce registration', 'update - ' . serialize($entity));
-        }
+        commerce_registration_entity_update_fields($entity, $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]);
+        entity_save('registration', $entity);
       }
     }
   }
@@ -132,12 +123,40 @@ function commerce_registration_information_review($form, $form_state, $checkout_
       $msg .= '<em>' . $product->title->value() . ' (' . $quantity . t(' registrations') . '):</em><br>';
       $msg .= t('');
       for ($i=0; $i<$quantity; $i++) {
-        $entity = &$order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        field_attach_load('registration', array($entity->registration_id => $entity));
-        dsm(field_attach_view('registration', $entity, 'full'));
+        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
         $msg .= drupal_render(field_attach_view('registration', $entity, 'full'));
       }
     }
   }
   return $msg;
+}
+
+/**
+ * Updates the attached entity with field values.
+ *
+ * @param $entity
+ *   The referenced entity to update.
+ * @param array $values
+ *   Array of values to add to the entity. Example value array:
+ *     array('field_passport' => array(
+ *             'und' => array(
+ *                0 => array('value' => 'MY FIELD VALUE')
+ *              )
+ *          )
+ *     )
+ */
+function commerce_registration_entity_update_fields(&$entity, $values) {
+  if (empty($values)) {
+    return;
+  }
+  foreach ($values as $key => $value) {
+    $entity->$key = $value;
+  }
+}
+
+/**
+ * Update the registration to normal on completed order.
+ */
+function commerce_registration_commerce_payment_order_paid_in_full($transaction) {
+  
 }
