@@ -1,4 +1,11 @@
 <?php
+/**
+ * @file
+ * Checkout pane callback functions.
+ *
+ * @todo Don't manually create a registration entity, use the function from
+ *   Entity Registrations to create the new registration.
+ */
 
 /**
  * Commerce checkout pane form builder callback.
@@ -22,6 +29,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       if (!$find_values) {
+        // order data has not been set, so we initialize an empty array for our
+        // entities to be stored
         $order->data['register_entities']['prod-' . $product->sku->value()] = array();
       }
       for ($i=0; $i<$quantity; $i++) {
@@ -34,10 +43,11 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         );
         $entity = NULL;
         if ($find_values && !empty($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
+          // the entity exists already, so let's just load it from the order
           $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-          field_attach_load('registration', array($entity->registration_id => $entity));
         }
         else {
+          // entity doesn't exist, so we need to create a new registration
           $entity = entity_create('registration', array('type' => variable_get('registration_commerce_product:' . $type . '_bundle', '')));
           $entity->bundle = $entity->type;
           $entity->entity_type = 'commerce_product';
@@ -48,15 +58,19 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->author_uid = $user->uid;
           $entity->status = 0;
         }
+        // attach the entity's fields to the form
         field_attach_form('registration', $entity, $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
         $fields = &$form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i];
         foreach ($fields as $key => $data) {
           if (is_array($data) && substr($key, 0, 1) != '#') {
+            // we set the parents on just fields so we can find them in
+            // form_state later; fields in the form array don't start with a #
             $fields[$key]['#parents'] = array('registration_information', 'prod-' . $product->sku->value(), 'prod-' . $product->sku->value() . '-reg-' . $i, $key);
           }
         }
+        // store entities in order's data array for use in validation, submission
+        // and review callbacks
         $order->data['register_entities']['prod-' . $product->sku->value()][$i] = $entity;
-        unset($entity);
       }
     }
   }
@@ -79,8 +93,8 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        // let other modules do any validation necessary
         field_attach_form_validate('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
-        $order->data['register_entities']['prod-' . $product->sku->value()][$i] = $entity;
       }
     }
   }
@@ -124,7 +138,8 @@ function commerce_registration_information_review($form, $form_state, $checkout_
       $msg .= t('');
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        $msg .= drupal_render(field_attach_view('registration', $entity, 'full'));
+        $l = $i+1;
+        $msg .= t("<hr><em><u>Registrant #$l</u></em><br />") . drupal_render(field_attach_view('registration', $entity, 'full'));
       }
     }
   }
@@ -158,5 +173,5 @@ function commerce_registration_entity_update_fields(&$entity, $values) {
  * Update the registration to normal on completed order.
  */
 function commerce_registration_commerce_payment_order_paid_in_full($transaction) {
-  
+  watchdog('commerce registration', serialize($transaction));
 }
