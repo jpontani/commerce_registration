@@ -108,7 +108,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:' . $type, 0);
+    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
