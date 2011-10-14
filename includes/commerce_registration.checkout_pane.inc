@@ -153,11 +153,12 @@ function commerce_registration_information_review($form, $form_state, $checkout_
  *   The referenced entity to update.
  * @param array $values
  *   Array of values to add to the entity. Example value array:
- *     array('field_passport' => array(
- *             'und' => array(
- *                0 => array('value' => 'MY FIELD VALUE')
- *              )
- *          )
+ *     array(
+ *       'field_passport' => array(
+ *         'und' => array(
+ *           0 => array('value' => 'MY FIELD VALUE')
+ *         )
+ *       )
  *     )
  */
 function commerce_registration_entity_update_fields(&$entity, $values) {
@@ -167,11 +168,4 @@ function commerce_registration_entity_update_fields(&$entity, $values) {
   foreach ($values as $key => $value) {
     $entity->$key = $value;
   }
-}
-
-/**
- * Update the registration to normal on completed order.
- */
-function commerce_registration_commerce_payment_order_paid_in_full($transaction) {
-  watchdog('commerce registration', serialize($transaction));
 }
