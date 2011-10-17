@@ -1,4 +1,40 @@
 <?php
+/**
+ * @file
+ *   Commerce Registration module code.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_registration_menu() {
+  $menu = array();
+
+  $menu['node/%node/registrations'] = array(
+    'title' => t('Registrations'),
+    'title callback' => 'commerce_registration_registration_page_title',
+    'title arguments' => array(1),
+    'access callback' => 'commerce_registration_registration_page_access',
+    'access arguments' => array(1),
+    'page callback' => 'commerce_registration_registration_page',
+    'page arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $menu;
+}
+
+function commerce_registration_registration_page_title($node) {
+  return '';
+}
+
+function commerce_registration_registration_page_access($node) {
+  return TRUE;
+}
+
+function commerce_registration_registration_page($node) {
+  return '';
+}
 
 /**
  * Implements hook_commerce_checkout_page_info().
