@@ -10,10 +10,8 @@
 function commerce_registration_menu() {
   $menu = array();
 
-  $menu['node/%node/registrations'] = array(
+  $menu['node/%node/registration'] = array(
     'title' => t('Registrations'),
-    'title callback' => 'commerce_registration_registration_page_title',
-    'title arguments' => array(1),
     'access callback' => 'commerce_registration_registration_page_access',
     'access arguments' => array(1),
     'page callback' => 'commerce_registration_registration_page',
@@ -24,16 +22,35 @@ function commerce_registration_menu() {
   return $menu;
 }
 
-function commerce_registration_registration_page_title($node) {
-  return '';
-}
-
 function commerce_registration_registration_page_access($node) {
   return TRUE;
 }
 
 function commerce_registration_registration_page($node) {
-  return '';
+  $prodids = array();
+  foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
+    $prodids[] = (int) $product['product_id'];
+  }
+  $header = array(t('Order'), t('Date'), t('Product'), t('Registrant'));
+  $rows = array();
+  foreach ($prodids as $product_id) {
+    $reg = db_select('registration', 'r')->fields('r', array('registration_id', 'order_id', 'created', 'author_uid'));
+    $reg->condition('r.entity_type', 'commerce_product')
+      ->condition('r.eid', $product_id)
+      ->condition('r.status', 1)
+      ->condition('r.order_id', 0, '!=')
+      ->orderBy('r.created', 'DESC');
+    $reg = $reg->execute();
+    foreach ($reg as $row) {
+      $prod = commerce_product_load($product_id);
+      $rows[] = array(
+        l(t('Order #') . $row->order_id, 'user/' . $row->author_uid . '/orders/' . $row->order_id),
+        date("F j, Y - g:i:s a", $row->created),
+        $prod->title,
+      );
+    }
+  }
+  return theme('table', array('header' => $header, 'rows' => $rows));
 }
 
 /**

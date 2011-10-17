@@ -57,6 +57,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->updated = REQUEST_TIME;
           $entity->author_uid = $user->uid;
           $entity->status = 0;
+          $entity->order_id = $order->order_id;
         }
         // attach the entity's fields to the form
         field_attach_form('registration', $entity, $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
