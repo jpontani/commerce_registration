@@ -77,6 +77,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   }
   if (!$show_form) {
     // no register enabled products, so go to next step of checkout process
+    $next_page = $form_state['checkout_page']['next_page'];
+    $order->status = $next_page;
   }
   return $form;
 }
