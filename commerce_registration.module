@@ -22,10 +22,28 @@ function commerce_registration_menu() {
   return $menu;
 }
 
+/**
+ * Page access callback to view all registrations for a given product display.
+ * @todo Registration function to check if a given entity is register
+ *   enabled.
+ */
 function commerce_registration_registration_page_access($node) {
-  return TRUE;
+  if (isset($node->field_commerce_product)) {
+    foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
+      $prod = commerce_product_load($product['product_id']);
+      $status = (int) variable_get('registration_status:commerce_product:_' . $prod->type, 0);
+      $bundle = variable_get('registration_bundle:commerce_product:_' . $prod->type, '');
+      if ($status == 1 && $bundle != '' && (user_access('view any registration') || user_access('view ' . $bundle . ' registration'))) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
 }
 
+/**
+ * Registration page callback for all registrations for a given product display.
+ */
 function commerce_registration_registration_page($node) {
   $prodids = array();
   foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
@@ -34,7 +52,7 @@ function commerce_registration_registration_page($node) {
   $header = array(t('Order'), t('Date'), t('Product'), t('Registrant'));
   $rows = array();
   foreach ($prodids as $product_id) {
-    $reg = db_select('registration', 'r')->fields('r', array('registration_id', 'order_id', 'created', 'author_uid'));
+    $reg = db_select('registration', 'r')->fields('r', array('registration_id', 'order_id', 'created', 'author_uid', 'user_uid'));
     $reg->condition('r.entity_type', 'commerce_product')
       ->condition('r.eid', $product_id)
       ->condition('r.status', 1)
@@ -43,12 +61,22 @@ function commerce_registration_registration_page($node) {
     $reg = $reg->execute();
     foreach ($reg as $row) {
       $prod = commerce_product_load($product_id);
+      $registrant = user_load($row->user_uid);
       $rows[] = array(
         l(t('Order #') . $row->order_id, 'user/' . $row->author_uid . '/orders/' . $row->order_id),
         date("F j, Y - g:i:s a", $row->created),
         $prod->title,
+        l('#' . $row->registration_id . ': ' . $registrant->name, 'registration/' . $row->registration_id),
       );
     }
+  }
+  if (empty($rows)) {
+    $rows[] = array(
+      array(
+        'data' => t('There are no registrations for any products for this node yet.'),
+        'colspan' => 4,
+      ),
+    );
   }
   return theme('table', array('header' => $header, 'rows' => $rows));
 }
