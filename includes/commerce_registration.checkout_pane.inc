@@ -146,7 +146,7 @@ function commerce_registration_information_review($form, $form_state, $checkout_
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      $msg .= '<em>' . $product->title->value() . ' (' . $quantity . ' ' . t('registrations') . '):</em><br />';
+      $msg .= '<em>' . $product->title->value() . ' (' . format_plural($quantity, '1 registration', '@count registrations') . '):</em><br />';
       $msg .= t('');
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];

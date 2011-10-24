@@ -104,7 +104,7 @@ function commerce_registration_order_has_registration($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_commerce_product:' . $type . '_status', 0);
+    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
     if ($can_register == 1) {
       return TRUE;
     }
@@ -115,14 +115,15 @@ function commerce_registration_order_has_registration($order) {
 /**
  * Condition callback.
  *
- * Checks the commerce order to see if the line items have a product that is
- * is in the allowed products list.
+ * Checks the commerce order to see if the line items have products that are in
+ * the allowed products list.
  *
  * @param $order
  *   The Commerce Order whose line items will be reviewed.
+ * @param $types
+ *   Array of machine names of allowed product types.
  * @return
- *   Boolean TRUE if the order has at least one register enabled product in it.
- *   Otherwise FALSE.
+ *   Boolean FALSE if any product type is not in the allowed products list.
  */
 function commerce_registration_order_product_types_allowed($order, $types) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
@@ -135,6 +136,9 @@ function commerce_registration_order_product_types_allowed($order, $types) {
   return TRUE;
 }
 
+/**
+ * Returns array of product types keyed by machine name.
+ */
 function commerce_registration_product_types() {
   $product_types = commerce_product_types();
   $types = array();
@@ -157,7 +161,7 @@ function commerce_registration_mark_paid($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_commerce_product:' . $type . '_status', 0);
+    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -183,7 +187,7 @@ function commerce_registration_cancel_registrations($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_commerce_product:' . $type . '_status', 0);
+    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
