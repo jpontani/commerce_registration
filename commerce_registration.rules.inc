@@ -24,6 +24,27 @@ function commerce_registration_rules_condition_info() {
       'execute' => 'commerce_registration_order_has_registration',
     ),
   );
+  $conditions['commerce_registration_multiple_product_types_allowed'] = array(
+    'label' => t('Order contains only specific product types.'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Commerce Order'),
+        'description' => t('The Commerce Order whose line items should be checked for allowed product types.'),
+      ),
+      'product_types' => array(
+        'type' => 'list<text>',
+        'label' => t('Product Types'),
+        'description' => t('The product types to allow in the cart.'),
+        'options list' => 'commerce_registration_product_types',
+        'restriction' => 'input',
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_order_product_types_allowed',
+    ),
+  );
 
   return $conditions;
 }
@@ -89,6 +110,38 @@ function commerce_registration_order_has_registration($order) {
     }
   }
   return FALSE;
+}
+
+/**
+ * Condition callback.
+ *
+ * Checks the commerce order to see if the line items have a product that is
+ * is in the allowed products list.
+ *
+ * @param $order
+ *   The Commerce Order whose line items will be reviewed.
+ * @return
+ *   Boolean TRUE if the order has at least one register enabled product in it.
+ *   Otherwise FALSE.
+ */
+function commerce_registration_order_product_types_allowed($order, $types) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $type = $line_item_wrapper->commerce_product->type->value();
+    if (!in_array($type, $types)) {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+function commerce_registration_product_types() {
+  $product_types = commerce_product_types();
+  $types = array();
+  foreach ($product_types as $key => $value) {
+    $types[$key] = $value['name'];
+  }
+  return $types;
 }
 
 /**
