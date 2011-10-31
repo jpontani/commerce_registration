@@ -23,7 +23,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   }
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
+    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
     if ($can_register == 1) {
       $show_form = TRUE;
       $product = $line_item_wrapper->commerce_product;
@@ -48,7 +48,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         }
         else {
           // entity doesn't exist, so we need to create a new registration
-          $entity = entity_create('registration', array('type' => variable_get('registration_bundle:commerce_product:_' . $type, '')));
+          $bundle = registration_entity_registration_bundle('commerce_product', $type, $product->product_id->value());
+          $entity = entity_create('registration', array('type' => $bundle));
           $entity->bundle = $entity->type;
           $entity->entity_type = 'commerce_product';
           $entity->entity_bundle = $product->type->value();
@@ -79,8 +80,13 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
     // no register enabled products, so go to next step of checkout process
     $order_status = commerce_order_status_load($order->status);
     if ($order_status['state'] == 'checkout' && $order_status['checkout_page'] == 'registration') {
+      watchdog('commerce registration', serialize($form_state));
       $this_page = commerce_checkout_page_load($order_status['checkout_page']);
       $next_page = $this_page['next_page'];
+      if ($order->log == "Customer returned to the previous checkout page via a submit button.") {
+        // not sure how else to check to see if they went back instead of forwards
+        $next_page = $this_page['prev_page'];
+      }
       $order = commerce_order_status_update($order, 'checkout_' . $next_page);
       // Inform modules of checkout completion if the next page is Completed.
       if ($next_page == 'complete') {
@@ -99,7 +105,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
+    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -120,7 +126,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
+    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -142,7 +148,7 @@ function commerce_registration_information_review($form, $form_state, $checkout_
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
+    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();

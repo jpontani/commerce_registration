@@ -11,7 +11,7 @@ function commerce_registration_menu() {
   $menu = array();
 
   $menu['node/%node/registration'] = array(
-    'title' => t('Registrations'),
+    'title' => 'Registrations',
     'access callback' => 'commerce_registration_registration_page_access',
     'access arguments' => array(1),
     'page callback' => 'commerce_registration_registration_page',
@@ -31,8 +31,8 @@ function commerce_registration_registration_page_access($node) {
   if (isset($node->field_commerce_product)) {
     foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
       $prod = commerce_product_load($product['product_id']);
-      $status = (int) variable_get('registration_status:commerce_product:_' . $prod->type, 0);
-      $bundle = variable_get('registration_bundle:commerce_product:_' . $prod->type, '');
+      $status = registration_entity_registration_status('commerce_product', $prod->type, $product['product_id']);
+      $bundle = registration_entity_registration_bundle('commerce_product', $prod->type, $product['product_id']);
       if ($status == 1 && $bundle != '' && (user_access('view any registration') || user_access('view ' . $bundle . ' registration'))) {
         return TRUE;
       }
