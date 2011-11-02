@@ -111,3 +111,21 @@ function commerce_registration_commerce_checkout_pane_info() {
   );
   return $panes;
 }
+
+/**
+ * Implements hook_commerce_line_item_type_info().
+ */
+function commerce_registration_commerce_line_item_type_info() {
+  $items = array();
+
+  $items['waitlist'] = array(
+    'type' => 'waitlist',
+    'name' => t('Waitlist'),
+    'product' => TRUE,
+    'description' => t('References a product that is out of stock or beyond registration capacity.'),
+    'add_form_submit_value' => t('Add product to waitlist'),
+    'base' => 'commerce_registration_waitlist',
+  );
+
+  return $items;
+}
