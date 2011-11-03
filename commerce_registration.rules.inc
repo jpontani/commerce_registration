@@ -85,6 +85,46 @@ function commerce_registration_rules_action_info() {
     ),
   );
 
+  // Waitlist actions
+  $actions['commerce_registration_move_to_waitlist'] = array(
+    'label' => t('Move product to waitlist'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Commerce Line Item'),
+        'description' => t('The Commerce Line Item containing the product to add to the waitlist.'),
+      ),
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Commerce Order'),
+        'description' => t('The Commerce Order containing line items for the products and waitlist.'),
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_move_to_waitlist',
+    ),
+  );
+  $actions['commerce_registration_waitlist_to_cart'] = array(
+    'label' => t('Move product from waitlist to cart'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Commerce Line Item'),
+        'description' => t('The Commerce Line Item containing the waitlist product to move back to the cart.'),
+      ),
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Commerce Order'),
+        'description' => t('The Commerce Order containing line items for the products and waitlist.'),
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_waitlist_to_cart',
+    ),
+  );
+
   return $actions;
 }
 

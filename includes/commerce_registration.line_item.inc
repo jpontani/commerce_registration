@@ -74,3 +74,22 @@ function commerce_registration_move_to_waitlist($line_item, $order) {
 
   return $waitlist_wrapper->value();
 }
+
+/**
+ * Moves the product on the waitlist line item to a normal product line item.
+ *
+ * @param $line_item
+ *   Commerce Line Item that we are moving to a normal product line item.
+ * @param $order
+ *   Commerce Order for the new line item to be added to.
+ */
+function commerce_registration_waitlist_to_cart($line_item, $order) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $product_id = $line_item_wrapper->commerce_product->product_id->value();
+  $quantity = $line_item_wrapper->quantity->value();
+  // we delete the waitlist line item
+  $order = commerce_cart_order_product_line_item_delete($order, $line_item_wrapper->line_item_id->value());
+  commerce_order_save($order);
+  // add product from the waitlist item to the cart as a normal product line item
+  commerce_cart_product_add($order->uid, $product_id, $quantity);
+}
