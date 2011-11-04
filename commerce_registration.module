@@ -125,7 +125,39 @@ function commerce_registration_commerce_line_item_type_info() {
     'description' => t('References a product that is out of stock or beyond registration capacity.'),
     'add_form_submit_value' => t('Add product to waitlist'),
     'base' => 'commerce_registration_waitlist',
+    'callbacks' => array(
+      'title' => 'commerce_registration_waitlist_title',
+    ),
   );
 
   return $items;
+}
+
+/**
+ * Line item configuration callback.
+ */
+function commerce_registration_waitlist_configuration() {
+  
+}
+
+/**
+ * Line item title callback.
+ */
+function commerce_registration_waitlist_title($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  return $line_item_wrapper->commerce_product->title->value();
+}
+
+/**
+ * Line item add form callback.
+ */
+function commerce_registration_waitlist_add_form(&$form_state) {
+  
+}
+
+/**
+ * Line item item add form submit callback.
+ */
+function commerce_registration_waitlist_add_form_submit(&$line_item, $element, &$form_state, $form) {
+  
 }

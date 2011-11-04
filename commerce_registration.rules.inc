@@ -251,23 +251,38 @@ function commerce_registration_cancel_registrations($order) {
  */
 function commerce_registration_move_to_waitlist($line_item, $order) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $waitlist_line_item = entity_create('commerce_line_item', array(
-    'type' => 'waitlist',
-    'order_id' => $order->order_id,
-    'quantity' => $line_item_wrapper->quantity->value(),
-  ));
-  commerce_line_item_save($waitlist_line_item);
-  
-  if (!($waitlist_line_item instanceof EntityMetadataWrapper)) {
-    $waitlist_wrapper = entity_metadata_wrapper('commerce_line_item', $waitlist_line_item);
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $waitlist_line_item = NULL;
+  // We search for an existing line item of the same product to possibly
+  // combine with.
+  $combine_line_item = NULL;
+  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
+    // If this line item matches the product being added...
+    if (empty($combine_line_item) && 
+      $combine_line_item_wrapper->type->value() == 'waitlist' && 
+      $combine_line_item_wrapper->commerce_product->product_id->value() ==
+      $line_item_wrapper->commerce_product->product_id->value()) {
+        $combine_line_item = $combine_line_item_wrapper->value();
+    }
   }
-
-  $waitlist_wrapper->commerce_product = $line_item_wrapper->commerce_product->value();
-
-  // Delete the existing line item so we don't have it as a normal line item
-  // and a waitlist line item.
-  // $order = commerce_cart_order_product_line_item_delete($order, $line_item_wrapper->line_item_id->value());
-
+  if (!empty($combine_line_item)) {
+    // Existing waitlist item, so we just update the quantity on that line item
+    $combine_line_item->quantity += $line_item->quantity;
+    commerce_line_item_save($combine_line_item);
+    entity_get_controller('commerce_line_item')->resetCache(array($combine_line_item->line_item_id));
+    $waitlist_line_item = $combine_line_item;
+  }
+  else {
+    // No existing waitlist item, so we create a new waitlist line item
+    $waitlist_line_item = clone $line_item;
+    unset($waitlist_line_item->line_item_id);
+    $waitlist_line_item->type = 'waitlist';
+    commerce_line_item_save($waitlist_line_item);
+    $order_wrapper->commerce_line_items[] = $waitlist_line_item;
+  }
+  // We delete the line item from the cart since it's currently both a product
+  // line item and a waitlist line item.
+  $order = commerce_cart_order_product_line_item_delete($order, $line_item_wrapper->line_item_id->value());
   commerce_order_save($order);
   
   // Invoke product removal event
@@ -280,7 +295,7 @@ function commerce_registration_move_to_waitlist($line_item, $order) {
     $line_item
   );
 
-  return $waitlist_wrapper->value();
+  return $waitlist_line_item;
 }
 
 /**
