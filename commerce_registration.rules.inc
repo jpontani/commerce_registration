@@ -45,6 +45,20 @@ function commerce_registration_rules_condition_info() {
       'execute' => 'commerce_registration_order_product_types_allowed',
     ),
   );
+  $conditions['commerce_registration_item_has_registration_capacity'] = array(
+    'label' => t('Product is available for registration'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Commerce Line Item'),
+        'description' => t('The Commerce Line Item containing the product to check if registrations are available. Checks open date, closing date, and capacity.'),
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_item_can_register',
+    ),
+  );
 
   return $conditions;
 }
@@ -146,6 +160,61 @@ function commerce_registration_order_has_registration($order) {
     $type = $line_item_wrapper->commerce_product->type->value();
     $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
     if ($can_register == 1) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Condition callback.
+ *
+ * Checks if the line item product has registration capacity left. Capacity is
+ * only taken if an order is paid for in full.
+ *
+ * @param $line_item
+ *   Commerce Line Item to check the product for registration capacity.
+ *
+ * @return
+ *   Boolean TRUE if the product has registration capacity.
+ */
+function commerce_registration_item_can_register($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $entity = array(
+    'id' => $line_item_wrapper->commerce_product->product_id->value(),
+    'type' => 'commerce_product',
+    'bundle' => $line_item_wrapper->commerce_product->type->value(),
+  );
+  $settings = registration_entity_settings($entity);
+  if (!is_array($settings)) {
+    $settings = unserialize($settings);
+  }
+  $capacity = $settings['capacity'];
+  $startdate = $settings['open_date'];
+  $enddate = $settings['close_date'];
+  // We first check to see if a date is even set for opening and closing
+  // If not, then registrations are open always.
+  if ($enddate == 0 && $startdate == 0) {
+    return TRUE;
+  }
+  // Next we see if we are within the opening and closing dates
+  if (REQUEST_TIME >= $startdate && REQUEST_TIME <= $enddate) {
+    if ($capacity != 0) {
+      // A limit is set, so we check to see it's not past that limit yet
+      // We add the product quantity to the number registered to see if it
+      // would put us past the registration capacity.
+      $num_registered = 0;
+      $num_registered += $line_item_wrapper->quantity->value();
+      watchdog('commerce registration', $num_registered);
+      if ($num_registered <= $capacity) {
+        return TRUE;
+      }
+      else
+      {
+        return FALSE;
+      }
+    }
+    else {
       return TRUE;
     }
   }

@@ -3,7 +3,5 @@ description = Registration integration for Drupal Commerce.
 package = Commerce (contrib)
 core = 7.x
 
-files[] = includes/commerce_registration.line_item.inc
-
 dependencies[] = commerce
 dependencies[] = registration

@@ -145,7 +145,7 @@ function commerce_registration_waitlist_configuration() {
  */
 function commerce_registration_waitlist_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  return $line_item_wrapper->commerce_product->title->value();
+  return t('<em>@title (waitlisted)</em>', array('@title' => $line_item_wrapper->commerce_product->title->value()));
 }
 
 /**
