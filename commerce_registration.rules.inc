@@ -158,8 +158,8 @@ function commerce_registration_order_has_registration($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    
-    $can_register = registration_entity_registration_status();
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $can_register = registration_entity_registration_status('commerce product', $type, $id);
     if ($can_register == 1) {
       return TRUE;
     }
@@ -220,7 +220,6 @@ function commerce_registration_item_can_register($line_item) {
         ->execute()
         ->rowCount();
       $num_registered += $line_item_wrapper->quantity->value();
-      watchdog('commerce registration', $num_registered);
       if ($num_registered <= $capacity) {
         return TRUE;
       }
@@ -285,7 +284,8 @@ function commerce_registration_mark_paid($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $can_register = registration_entity_registration_status('commerce_product', $type, $id);
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -311,7 +311,8 @@ function commerce_registration_cancel_registrations($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = (int) variable_get('registration_status:commerce_product:_' . $type, 0);
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $can_register = registration_entity_registration_status('commerce_product', $type, $id);
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
