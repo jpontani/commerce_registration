@@ -178,7 +178,7 @@ function commerce_registration_waitlist_title($line_item) {
     'bundle' => $line_item_wrapper->commerce_product->type->value(),
   );
   $avail = registration_entity_slots_available($entity);
-  return t('<em>@title (@capacity available)</em>',
+  return t('<em>@title (@capacity available) (waitlisted)</em>',
     array(
       '@title' => $line_item_wrapper->commerce_product->title->value(),
       '@capacity' => format_plural($avail, '1 slot', '@count slots'),
