@@ -23,7 +23,13 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   }
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
+    $can_register = registration_entity_registration_status(array(
+      'id' => $line_item_wrapper->commerce_product->product_id->value(),
+      'type' => 'commerce_product',
+      'bundle' => $type,
+      )
+    );
+    watchdog('registration', $can_register);
     if ($can_register == 1) {
       $show_form = TRUE;
       $product = $line_item_wrapper->commerce_product;
@@ -48,7 +54,12 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         }
         else {
           // entity doesn't exist, so we need to create a new registration
-          $bundle = registration_entity_registration_bundle('commerce_product', $type, $product->product_id->value());
+          $bundle = registration_entity_registration_bundle(array(
+            'id' => $line_item_wrapper->commerce_product->product_id->value(),
+            'type' => 'commerce_product',
+            'bundle' => $type,
+            )
+          );
           $entity = entity_create('registration', array('type' => $bundle));
           $entity->bundle = $entity->type;
           $entity->entity_type = 'commerce_product';
@@ -80,7 +91,6 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
     // no register enabled products, so go to next step of checkout process
     $order_status = commerce_order_status_load($order->status);
     if ($order_status['state'] == 'checkout' && $order_status['checkout_page'] == 'registration') {
-      watchdog('commerce registration', serialize($form_state));
       $this_page = commerce_checkout_page_load($order_status['checkout_page']);
       $next_page = $this_page['next_page'];
       if ($order->log == "Customer returned to the previous checkout page via a submit button.") {
@@ -105,14 +115,24 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
+    $can_register = registration_entity_registration_status(array(
+      'id' => $line_item_wrapper->commerce_product->product_id->value(),
+      'type' => 'commerce_product',
+      'bundle' => $type,
+      )
+    );
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
         // let other modules do any validation necessary
-        field_attach_form_validate('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
+        field_attach_form_validate(
+          'registration',
+          $entity,
+          $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i],
+          $form_state
+        );
       }
     }
   }
@@ -126,14 +146,27 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
+    $can_register = registration_entity_registration_status(array(
+      'id' => $line_item_wrapper->commerce_product->product_id->value(),
+      'type' => 'commerce_product',
+      'bundle' => $type,
+      )
+    );
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        field_attach_submit('registration', $entity, $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
-        commerce_registration_entity_update_fields($entity, $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]);
+        field_attach_submit(
+          'registration',
+          $entity,
+          $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i],
+          $form_state
+        );
+        commerce_registration_entity_update_fields(
+          $entity,
+          $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]
+        );
         entity_save('registration', $entity);
       }
     }
@@ -148,7 +181,12 @@ function commerce_registration_information_review($form, $form_state, $checkout_
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status('commerce_product', $type, $line_item_wrapper->commerce_product->product_id->value());
+    $can_register = registration_entity_registration_status(array(
+      'id' => $line_item_wrapper->commerce_product->product_id->value(),
+      'type' => 'commerce_product',
+      'bundle' => $type,
+      )
+    );
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
