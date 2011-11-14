@@ -159,12 +159,16 @@ function commerce_registration_order_has_registration($order) {
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
     $id = $line_item_wrapper->commerce_product->product_id->value();
+<<<<<<< HEAD
     $can_register = registration_entity_registration_status(array(
       'id' => $id,
       'type' => 'commerce_product',
       'bundle' => $type,
       )
     );
+=======
+    $can_register = registration_entity_registration_status('commerce product', $type, $id);
+>>>>>>> cbf8bf6c50ed15d14a85daf42769c985699a9b2b
     if ($can_register == 1) {
       return TRUE;
     }
@@ -290,12 +294,16 @@ function commerce_registration_mark_paid($order) {
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
     $id = $line_item_wrapper->commerce_product->product_id->value();
+<<<<<<< HEAD
     $can_register = registration_entity_registration_status(array(
       'id' => $id,
       'type' => 'commerce_product',
       'bundle' => $type,
       )
     );
+=======
+    $can_register = registration_entity_registration_status('commerce_product', $type, $id);
+>>>>>>> cbf8bf6c50ed15d14a85daf42769c985699a9b2b
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -322,12 +330,16 @@ function commerce_registration_cancel_registrations($order) {
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $type = $line_item_wrapper->commerce_product->type->value();
     $id = $line_item_wrapper->commerce_product->product_id->value();
+<<<<<<< HEAD
     $can_register = registration_entity_registration_status(array(
       'id' => $id,
       'type' => 'commerce_product',
       'bundle' => $type,
       )
     );
+=======
+    $can_register = registration_entity_registration_status('commerce_product', $type, $id);
+>>>>>>> cbf8bf6c50ed15d14a85daf42769c985699a9b2b
     if ($can_register == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
