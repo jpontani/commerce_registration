@@ -133,6 +133,10 @@ function commerce_registration_commerce_line_item_type_info() {
   return $items;
 }
 
+function commerce_registration_commerce_line_item_type_info_alter(&$line_item_types) {
+  $line_item_types['product']['callbacks']['title'] = 'commerce_registration_product_title';
+}
+
 /**
  * Line item configuration callback.
  */
@@ -140,22 +144,44 @@ function commerce_registration_waitlist_configuration() {
   
 }
 
+function commerce_registration_product_title($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $entity = array(
+    'id' => $line_item_wrapper->commerce_product->product_id->value(),
+    'type' => 'commerce_product',
+    'bundle' => $line_item_wrapper->commerce_product->type->value(),
+  );
+  $status = registration_entity_registration_status($entity);
+  if ($status == 1) {
+    watchdog('commerce registration', 'product title callback');
+    $avail = registration_entity_slots_available($entity);
+    return t('@title (@capacity available)',
+      array(
+        '@title' => $line_item_wrapper->commerce_product->title->value(),
+        '@capacity' => format_plural($avail, '1 slot', '@count slots'),
+      )
+    );
+  }
+  else {
+    return $line_item_wrapper->commerce_product->title->value();
+  }
+}
+
 /**
  * Line item title callback.
  */
 function commerce_registration_waitlist_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $settings = registration_entity_settings(array(
-      'id' => $line_item_wrapper->commerce_product->product_id->value(),
-      'type' => 'commerce_product',
-      'bundle' => $line_item_wrapper->commerce_product->type->value(),
-    )
+  $entity = array(
+    'id' => $line_item_wrapper->commerce_product->product_id->value(),
+    'type' => 'commerce_product',
+    'bundle' => $line_item_wrapper->commerce_product->type->value(),
   );
-  return t('<em>@title (@capacity @plural available)</em>',
+  $avail = registration_entity_slots_available($entity);
+  return t('<em>@title (@capacity available)</em>',
     array(
       '@title' => $line_item_wrapper->commerce_product->title->value(),
-      '@capacity' => $settings['capacity'],
-      '@plural' => format_plural($settings['capacity'], 'slot', 'slots'),
+      '@capacity' => format_plural($avail, '1 slot', '@count slots'),
     )
   );
 }
