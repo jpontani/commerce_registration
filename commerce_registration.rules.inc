@@ -206,34 +206,25 @@ function commerce_registration_item_can_register($line_item) {
   // Next we see if we are within the opening and closing dates
   if (REQUEST_TIME >= $startdate && REQUEST_TIME <= $enddate) {
     if ($capacity != 0) {
-      // A limit is set, so we check to see it's not past that limit yet
-      // We add the product quantity to the number registered to see if it
-      // would put us past the registration capacity.
-      $num_registered = 0;
-      // First get the number of completed orders that have this product
-      // and have a completed registration.
-      $num_reg_query = db_select('registration', 'r')
-        ->fields('r')
-        ->condition('r.entity_type', 'commerce_product')
-        ->condition('r.entity_bundle', $line_item_wrapper->commerce_product->type->value())
-        ->condition('r.eid', $line_item_wrapper->commerce_product->product_id->value())
-        ->condition('r.status', 1);
-      $num_reg_query->leftJoin('commerce_order', 'co', 'co.order_id=r.order_id');
-      $num_reg_query
-        ->condition('co.status', 'completed');
-      $num_registered = $num_reg_query
-        ->execute()
-        ->rowCount();
-      $num_registered += $line_item_wrapper->quantity->value();
-      if ($num_registered <= $capacity) {
+      $avail = registration_entity_slots_available($entity);
+      if ($avail > 0) {
+        // If there are slots available, we see if the quantity puts us beyond
+        // the capacity.
+        if ($line_item_wrapper->quantity->value > $avail) {
+          // The quantity requested is greater than available slots.
+          return FALSE;
+        }
+        // There are slots available for the requested quantity.
         return TRUE;
       }
       else
       {
+        // There are no slots available.
         return FALSE;
       }
     }
     else {
+      // No registration capacity set. Always allow.
       return TRUE;
     }
   }
@@ -344,6 +335,7 @@ function commerce_registration_cancel_registrations($order) {
 /**
  * Creates a new waitlist line item from an existing line item.
  *
+ * Combines identical products on to a single line item.
  * @param $line_item
  *   Commerce Line Item that we are moving to a waitlist.
  * @param $order
