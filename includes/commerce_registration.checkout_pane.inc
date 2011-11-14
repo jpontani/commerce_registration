@@ -43,7 +43,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         $label = $i+1;
         $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i] = array(
           '#type' => 'fieldset',
-          '#title' => check_plain($product->title->value() . ' #' . $label),
+          '#title' => check_plain($product->title->value() . ' - Registrant #' . $label),
           '#collapsible' => TRUE,
           '#tree' => TRUE,
         );
