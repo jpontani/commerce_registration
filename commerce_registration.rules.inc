@@ -73,6 +73,20 @@ function commerce_registration_rules_condition_info() {
       'execute' => 'commerce_registration_line_item_is_waitlist',
     ),
   );
+  $conditions['commerce_registration_line_item_is_on_waitlist'] = array(
+    'label' => t('Product is already on the waitlist'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Commerce Line Item'),
+        'description' => t('The Commerce Line Item to check for an existing wait list line item.'),
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_line_item_is_on_waitlist',
+    ),
+  );
 
   return $conditions;
 }
@@ -142,6 +156,20 @@ function commerce_registration_rules_action_info() {
       'execute' => 'commerce_registration_waitlist_to_cart',
     ),
   );
+  $actions['commerce_registration_update_waitlist'] = array(
+    'label' => t('Update the waiting list'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Commerce Line Item'),
+        'description' => t('The Commerce Line Item to update to the waitlist'),
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_update_waitlist',
+    ),
+  );
 
   return $actions;
 }
@@ -204,13 +232,21 @@ function commerce_registration_item_can_register($line_item) {
   $capacity = $settings['capacity'];
   $startdate = $settings['open_date'];
   $enddate = $settings['close_date'];
+  // $datesOk checks to make sure we are within the date range of registration.
+  $datesOk = FALSE;
   // We first check to see if a date is even set for opening and closing
   // If not, then registrations are open always.
   if ($enddate == 0 && $startdate == 0) {
-    return TRUE;
+    $datesOk = TRUE;
   }
-  // Next we see if we are within the opening and closing dates
-  if (REQUEST_TIME >= $startdate && REQUEST_TIME <= $enddate) {
+  else {
+    if (REQUEST_TIME >= $startdate && REQUEST_TIME <= $enddate) {
+      $datesOk = TRUE;
+    }
+  }
+  // Next we see if we are within the opening and closing dates, or if they are
+  // always open.
+  if ($datesOk) {
     if ($capacity != 0) {
       $avail = registration_entity_slots_available($entity);
       if ($avail > 0) {
@@ -346,10 +382,10 @@ function commerce_registration_cancel_registrations($order) {
  *   Commerce Line Item that we are moving to a waitlist.
  */
 function commerce_registration_move_to_waitlist($line_item) {
+  $line_item->type = 'waitlist';
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $order = commerce_order_load($line_item_wrapper->order_id->value());
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  $waitlist_line_item = NULL;
   // We search for an existing line item of the same product to possibly
   // combine with.
   $combine_line_item = NULL;
@@ -364,34 +400,35 @@ function commerce_registration_move_to_waitlist($line_item) {
   }
   if (!empty($combine_line_item)) {
     // Existing waitlist item, so we just update the quantity on that line item
-    $combine_line_item->quantity += $line_item->quantity;
-    commerce_line_item_save($combine_line_item);
-    entity_get_controller('commerce_line_item')->resetCache(array($combine_line_item->line_item_id));
-    $waitlist_line_item = $combine_line_item;
+    watchdog('commerce registration', 'combining waitlist');
+    $line_item->quantity += $combine_line_item->quantity;
+    commerce_line_item_save($line_item);
+    //$order = commerce_cart_order_product_line_item_delete($order, $combine_line_item->line_item_id);
+    commerce_order_save($order);
   }
-  else {
-    // No existing waitlist item, so we create a new waitlist line item
-    $waitlist_line_item = clone $line_item;
-    unset($waitlist_line_item->line_item_id);
-    $waitlist_line_item->type = 'waitlist';
-    commerce_line_item_save($waitlist_line_item);
-    $order_wrapper->commerce_line_items[] = $waitlist_line_item;
-  }
-  // Invoke product removal event
-  rules_invoke_event(
-    'commerce_cart_product_remove',
-    $order,
-    $line_item_wrapper->commerce_product->value(),
-    $line_item_wrapper->quantity->value(),
-    $line_item,
-    $line_item
-  );
-  // We delete the line item from the cart since it's currently both a product
-  // line item and a waitlist line item.
-  $order = commerce_cart_order_product_line_item_delete($order, $line_item_wrapper->line_item_id->value());
-  commerce_order_save($order);
+  commerce_line_item_save($line_item);
 
-  return $waitlist_line_item;
+  return $line_item;
+}
+
+/**
+ * Condition callback.
+ *
+ * Checks for an existing line item of the same product.
+ */
+function commerce_registration_line_item_is_on_waitlist($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $order = commerce_order_load($line_item_wrapper->order_id->value());
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
+    // If this line item matches the product being added...
+    if ($combine_line_item_wrapper->type->value() == 'waitlist' && 
+      $combine_line_item_wrapper->commerce_product->product_id->value() ==
+      $line_item_wrapper->commerce_product->product_id->value()) {
+        return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**
@@ -402,5 +439,9 @@ function commerce_registration_move_to_waitlist($line_item) {
  */
 function commerce_registration_waitlist_to_cart($line_item) {
   $line_item->type = 'product';
+  commerce_line_item_save($line_item);
+}
+
+function commerce_registration_update_waitlist($line_item) {
   commerce_line_item_save($line_item);
 }

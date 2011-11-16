@@ -144,6 +144,17 @@ function commerce_registration_waitlist_configuration() {
   
 }
 
+/**
+ * Product title line item callback.
+ *
+ * We alter the title of the default line item to show available slots if the
+ * product is register enabled.
+ *
+ * @param $line_item
+ *
+ * @return
+ *   Title of the line item product plus available slots, if applicable.
+ */
 function commerce_registration_product_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $entity = array(
@@ -153,12 +164,12 @@ function commerce_registration_product_title($line_item) {
   );
   $status = registration_entity_registration_status($entity);
   if ($status == 1) {
-    watchdog('commerce registration', 'product title callback');
     $avail = registration_entity_slots_available($entity);
+    $capacity = ($avail != 0 ? format_plural($avail, '1 slot', '@count slots') : 'No slots');
     return t('@title (@capacity available)',
       array(
         '@title' => $line_item_wrapper->commerce_product->title->value(),
-        '@capacity' => format_plural($avail, '1 slot', '@count slots'),
+        '@capacity' => $capacity,
       )
     );
   }
