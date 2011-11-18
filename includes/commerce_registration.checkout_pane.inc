@@ -29,7 +29,6 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
       'bundle' => $type,
       )
     );
-    watchdog('registration', $can_register);
     if ($can_register == 1) {
       $show_form = TRUE;
       $product = $line_item_wrapper->commerce_product;

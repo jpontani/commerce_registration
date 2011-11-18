@@ -495,7 +495,6 @@ function commerce_registration_waitlist_to_cart($line_item) {
  * Removes the line item from the order.
  */
 function commerce_registration_delete_line_item($line_item) {
-  watchdog('commerce registration', 'deleting line item #' . $line_item->line_item_id);
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $order = commerce_order_load($line_item_wrapper->order_id->value());
   // Delete the old line_item.

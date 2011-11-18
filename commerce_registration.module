@@ -157,10 +157,23 @@ function commerce_registration_waitlist_configuration() {
  */
 function commerce_registration_product_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  return commerce_registration_get_product_title($line_item_wrapper->commerce_product->value());
+}
+
+/**
+ * Returns a product title.
+ *
+ * @param $product
+ *   Fully formed Commerce Product object.
+ *
+ * @return
+ *   Product title with remaining capacity if available.
+ */
+function commerce_registration_get_product_title($product) {
   $entity = array(
-    'id' => $line_item_wrapper->commerce_product->product_id->value(),
+    'id' => $product->product_id,
     'type' => 'commerce_product',
-    'bundle' => $line_item_wrapper->commerce_product->type->value(),
+    'bundle' => $product->type,
   );
   $status = registration_entity_registration_status($entity);
   if ($status == 1) {
@@ -168,13 +181,13 @@ function commerce_registration_product_title($line_item) {
     $capacity = ($avail != 0 ? format_plural($avail, '1 slot', '@count slots') : 'No slots');
     return t('@title (@capacity available)',
       array(
-        '@title' => $line_item_wrapper->commerce_product->title->value(),
+        '@title' => $product->title,
         '@capacity' => $capacity,
       )
     );
   }
   else {
-    return $line_item_wrapper->commerce_product->title->value();
+    return $product->title;
   }
 }
 
@@ -209,4 +222,42 @@ function commerce_registration_waitlist_add_form(&$form_state) {
  */
 function commerce_registration_waitlist_add_form_submit(&$line_item, $element, &$form_state, $form) {
   
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Changes the product title in the add to cart form to have the remaining
+ * capacity if available.
+ */
+function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
+  if (substr($form_id, 0, 30) == 'commerce_cart_add_to_cart_form') {
+    switch ($form['product_id']['#type']) {
+      case "select":
+        $products = $form['product_id']['#options'];
+        foreach ($products as $product_id => $title) {
+          $product = commerce_product_load($product_id);
+          $title = commerce_registration_get_product_title($product);
+          $form['product_id']['#options'][$product_id] = $title;
+        }
+        break;
+      case "hidden":
+        $product = commerce_product_load($form['product_id']['#value']);
+        $entity = array(
+          'id' => $product->product_id,
+          'type' => 'commerce_product',
+          'bundle' => $product->type,
+        );
+        $submit = $form['submit'];
+        unset($form['submit']);
+        $capacity = registration_entity_slots_available($entity);
+        $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
+        $form['capacity'] = array(
+          '#type' => 'markup',
+          '#markup' => '<em>' . $capacity . '</em>',
+        );
+        $form['submit'] = $submit;
+        break;
+    }
+  }
 }
