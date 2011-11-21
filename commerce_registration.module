@@ -178,8 +178,8 @@ function commerce_registration_get_product_title($product) {
   $status = registration_entity_registration_status($entity);
   if ($status == 1) {
     $avail = registration_entity_slots_available($entity);
-    $capacity = ($avail != 0 ? format_plural($avail, '1 slot', '@count slots') : 'No slots');
-    return t('@title (@capacity available)',
+    $capacity = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available, waitlist only');
+    return t('@title (@capacity)',
       array(
         '@title' => $product->title,
         '@capacity' => $capacity,
@@ -231,6 +231,7 @@ function commerce_registration_waitlist_add_form_submit(&$line_item, $element, &
  * capacity if available.
  */
 function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
+  // Add waitlist/slots available text to Add to Cart form.
   if (substr($form_id, 0, 30) == 'commerce_cart_add_to_cart_form') {
     switch ($form['product_id']['#type']) {
       case "select":
@@ -259,5 +260,101 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         $form['submit'] = $submit;
         break;
     }
+  }
+  // Add administrative Registration settings to Product Add/Edit form.
+  if (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
+    if (!function_exists('registration_bundle_options')) {
+      module_load_include('inc', 'registration', 'includes/registration.admin');
+    }
+    $product_info = array(
+      'id' => 0,
+      'type' => 'commerce_product',
+      'bundle' => 'product',
+    );
+    if (isset($form_state['build_info']['args'][0])) {
+      $product = $form_state['build_info']['args'][0];
+      $product_info['id'] = $product->product_id;
+      $product_info['bundle'] = $product->type;
+    }
+    $form['commerce_registration'] = array(
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#title' => t('Registration Settings'),
+      '#weight' => 36,
+    );
+    $form['commerce_registration']['status'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable registrations on this product'),
+      '#parents' => array('commerce_registration', 'status'),
+      '#default_value' => registration_entity_registration_status($product_info),
+    );
+    $form['commerce_registration']['bundle'] = array(
+      '#type' => 'select',
+      '#title' => t('Registration Bundle'),
+      '#options' => registration_bundle_options(),
+      '#parents' => array('commerce_registration', 'bundle'),
+      '#default_value' => registration_entity_registration_bundle($product_info),
+    );
+    $form['commerce_registration']['capacity'] = array(
+      '#type' => 'textfield',
+      '#size' => 5,
+      '#title' => t('Capacity'),
+      '#parents' => array('commerce_registration', 'capacity'),
+    );
+    $form['commerce_registration']['open_date'] = array(
+      '#type' => 'date',
+      '#title' => t('Registration Open Date'),
+      '#parents' => array('commerce_registration', 'open_date'),
+    );
+    $form['commerce_registration']['close_date'] = array(
+      '#type' => 'date',
+      '#title' => t('Registration Close Date'),
+      '#parents' => array('commerce_registration', 'close_date'),
+    );
+    $form['commerce_registration']['reminder'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Send Reminder Emails'),
+      '#parents' => array('commerce_registration', 'reminder'),
+    );
+    $form['commerce_registration']['reminder_times'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Reminder Email Times'),
+      '#parents' => array('commerce_registration', 'reminder_times'),
+    );
+    $form['commerce_registration']['notify'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Send Notification Emails'),
+      '#parents' => array('commerce_registration', 'notify'),
+    );
+    $form['commerce_registration']['notify_emails'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Emails to Send Notifications To'),
+      '#parents' => array('commerce_registration', 'notify_emails'),
+    );
+    $form['actions']['submit']['#submit'][] = 'commerce_registration_product_ui_form_submit';
+  }
+}
+
+/**
+ * Submission handler for store UI form alterations.
+ */
+function commerce_registration_product_ui_form_submit($form, $form_state) {
+  if (isset($form_state['values']['commerce_registration'])) {
+    $product = $form_state['build_info']['args'][0];
+    $product_info = array(
+      'id' => $product->product_id,
+      'type' => 'commerce_product',
+      'bundle' => $product->type,
+    );
+    $status = $form_state['values']['commerce_registration']['status'];
+    $bundle = $form_state['values']['commerce_registration']['bundle'];
+    $settings = registration_default_settings();
+    $settings['status'] = $status;
+    $row_data = array(
+      'registration_bundle' => $bundle,
+      'settings' => serialize($settings),
+    );
+    registration_update_entity_settings($product_info, $row_data);
   }
 }
