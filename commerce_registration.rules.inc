@@ -87,6 +87,20 @@ function commerce_registration_rules_condition_info() {
       'execute' => 'commerce_registration_line_item_is_on_waitlist',
     ),
   );
+  $conditions['commerce_registration_can_be_waitlisted'] = array(
+    'label' => t('Product has a waitlist'),
+    'group' => t('Commerce Registration'),
+    'parameter' => array(
+      'commerce_line_item' => array(
+        'type' => 'commerce_line_item',
+        'label' => t('Commerce Line Item'),
+        'description' => t('The Commerce Line Item to check if the product can be put on a waitlist.'),
+      ),
+    ),
+    'callbacks' => array(
+      'execute' => 'commerce_registration_can_be_waitlisted',
+    ),
+  );
 
   return $conditions;
 }
@@ -175,7 +189,15 @@ function commerce_registration_rules_action_info() {
 }
 
 /**
+ * @defgroup commerce_registration_rules_conditions Commerce Registration Rules Conditions
+ * @{
+ * Condition callbacks for Commerce Registration rules.
+ */
+
+/**
  * Condition callback.
+ *
+ * Checks if the line item is a waitlist line item.
  */
 function commerce_registration_line_item_is_waitlist($line_item) {
   return ($line_item->type == 'waitlist' ? TRUE : FALSE);
@@ -229,9 +251,9 @@ function commerce_registration_item_can_register($line_item) {
   if (!is_array($settings)) {
     $settings = unserialize($settings);
   }
-  $capacity = $settings['capacity'];
-  $startdate = $settings['open_date'];
-  $enddate = $settings['close_date'];
+  $capacity = $settings['settings']['capacity'];
+  $startdate = $settings['settings']['open_date'];
+  $enddate = $settings['settings']['close_date'];
   // $datesOk checks to make sure we are within the date range of registration.
   $datesOk = FALSE;
   // We first check to see if a date is even set for opening and closing
@@ -298,19 +320,53 @@ function commerce_registration_order_product_types_allowed($order, $types) {
 }
 
 /**
- * Returns array of product types keyed by machine name.
+ * Condition callback.
+ *
+ * Checks for an existing line item of the same product.
  */
-function commerce_registration_product_types() {
-  $product_types = commerce_product_types();
-  $types = array();
-  foreach ($product_types as $key => $value) {
-    $types[$key] = $value['name'];
+function commerce_registration_line_item_is_on_waitlist($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $order = commerce_order_load($line_item_wrapper->order_id->value());
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
+    // If this line item matches the product being added...
+    if ($combine_line_item_wrapper->type->value() == 'waitlist' && 
+      $combine_line_item_wrapper->commerce_product->product_id->value() ==
+      $line_item_wrapper->commerce_product->product_id->value()) {
+        return TRUE;
+    }
   }
-  return $types;
+  return FALSE;
 }
 
 /**
- * Action execute callback.
+ * Condition callback.
+ *
+ * Checks if the line item product can be put on a waitlist.
+ */
+function commerce_registration_can_be_waitlisted($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $info = array(
+    'id' => $line_item_wrapper->commerce_product->product_id->value(),
+    'type' => 'commerce_product',
+    'bundle' => $line_item_wrapper->commerce_product->type->value(),
+  );
+  $settings = registration_entity_settings($info);
+  return (!empty($settings) && isset($settings['settings']) ? $settings['settings']['waitlist'] : FALSE);
+}
+
+/**
+ * @} End of "defgroup commerce_registration_rules_conditions".
+ */
+
+/**
+ * @defgroup commerce_registration_rules_actions Commerce Registration Rules Actions
+ * @{
+ * Action callbacks for Commerce Registration rules.
+ */
+
+/**
+ * Action callback.
  *
  * Marks all registrations on a particular order as paid.
  *
@@ -343,7 +399,7 @@ function commerce_registration_mark_paid($order) {
 }
 
 /**
- * Action execute callback.
+ * Action callback.
  *
  * Cancels all registrations on a particular order.
  *
@@ -375,6 +431,8 @@ function commerce_registration_cancel_registrations($order) {
 }
 
 /**
+ * Action callback.
+ *
  * Creates a new waitlist line item from an existing line item.
  *
  * Combines identical products on to a single line item.
@@ -402,6 +460,7 @@ function commerce_registration_move_to_waitlist($line_item) {
     }
   }
   $new_line_item = clone $line_item;
+  $new_line_item->type = 'waitlist';
   unset($new_line_item->line_item_id);
 
   if (!empty($combine_line_item)) {
@@ -416,33 +475,15 @@ function commerce_registration_move_to_waitlist($line_item) {
     // Existing waitlist item, we delete it so we don't have two identical line
     // items.
     $order = commerce_cart_order_product_line_item_delete($order, $combine_line_item->line_item_id);
-    commerce_order_save($order);
   }
+  commerce_order_save($order);
 
   return $new_line_item;
 }
 
 /**
- * Condition callback.
+ * Action callback.
  *
- * Checks for an existing line item of the same product.
- */
-function commerce_registration_line_item_is_on_waitlist($line_item) {
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $order = commerce_order_load($line_item_wrapper->order_id->value());
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
-    // If this line item matches the product being added...
-    if ($combine_line_item_wrapper->type->value() == 'waitlist' && 
-      $combine_line_item_wrapper->commerce_product->product_id->value() ==
-      $line_item_wrapper->commerce_product->product_id->value()) {
-        return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-/**
  * Moves the product on the waitlist line item to a normal product line item.
  *
  * @param $line_item
@@ -500,4 +541,20 @@ function commerce_registration_delete_line_item($line_item) {
   // Delete the old line_item.
   $order = commerce_cart_order_product_line_item_delete($order, $line_item->line_item_id);
   commerce_order_save($order);
+}
+
+/**
+ * @} End of "defgroup commerce_registration_rules_actions".
+ */
+
+/**
+ * Returns array of product types keyed by machine name.
+ */
+function commerce_registration_product_types() {
+  $product_types = commerce_product_types();
+  $types = array();
+  foreach ($product_types as $key => $value) {
+    $types[$key] = $value['name'];
+  }
+  return $types;
 }
