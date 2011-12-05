@@ -249,15 +249,17 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           'type' => 'commerce_product',
           'bundle' => $product->type,
         );
-        $submit = $form['submit'];
-        unset($form['submit']);
-        $capacity = registration_entity_slots_available($entity);
-        $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
-        $form['capacity'] = array(
-          '#type' => 'markup',
-          '#markup' => '<em>' . $capacity . '</em>',
-        );
-        $form['submit'] = $submit;
+        if (registration_entity_registration_status($entity) == 1) {
+          $submit = $form['submit'];
+          unset($form['submit']);
+          $capacity = registration_entity_slots_available($entity);
+          $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
+          $form['capacity'] = array(
+            '#type' => 'markup',
+            '#markup' => '<em>' . $capacity . '</em>',
+          );
+          $form['submit'] = $submit;
+        }
         break;
     }
   }
@@ -276,62 +278,28 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
       $product_info['id'] = $product->product_id;
       $product_info['bundle'] = $product->type;
     }
-    $form['commerce_registration'] = array(
+    $form['registration_settings'] = array(
       '#type' => 'fieldset',
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
       '#title' => t('Registration Settings'),
-      '#weight' => 36,
+      '#collapsible' => TRUE,
+      '#collapsed' => !registration_entity_registration_status($product_info),
     );
-    $form['commerce_registration']['status'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Enable registrations on this product'),
-      '#parents' => array('commerce_registration', 'status'),
-      '#default_value' => registration_entity_registration_status($product_info),
-    );
-    $form['commerce_registration']['bundle'] = array(
+    $settings = registration_entity_settings($product_info);
+    $form['registration_settings'] += registration_default_settings_base_form(array('registration_settings'), $settings);
+    $open = $form['registration_settings']['settings']['open_date']['#default_value'];
+    $close = $form['registration_settings']['settings']['close_date']['#default_value'];
+    $form['registration_settings']['settings']['open_date']['#default_value'] = date('c', (int) $open);
+    $form['registration_settings']['settings']['close_date']['#default_value'] = date('c', (int) $close);
+    $form['registration_settings']['settings']['status']['#weight'] = -2;
+    $form['registration_settings']['settings']['bundle'] = array(
       '#type' => 'select',
-      '#title' => t('Registration Bundle'),
       '#options' => registration_bundle_options(),
-      '#parents' => array('commerce_registration', 'bundle'),
+      '#title' => t('Registration Bundle'),
+      '#parents' => array('registration_settings', 'settings', 'bundle'),
+      '#weight' => -1,
       '#default_value' => registration_entity_registration_bundle($product_info),
     );
-    $form['commerce_registration']['capacity'] = array(
-      '#type' => 'textfield',
-      '#size' => 5,
-      '#title' => t('Capacity'),
-      '#parents' => array('commerce_registration', 'capacity'),
-    );
-    $form['commerce_registration']['open_date'] = array(
-      '#type' => 'date',
-      '#title' => t('Registration Open Date'),
-      '#parents' => array('commerce_registration', 'open_date'),
-    );
-    $form['commerce_registration']['close_date'] = array(
-      '#type' => 'date',
-      '#title' => t('Registration Close Date'),
-      '#parents' => array('commerce_registration', 'close_date'),
-    );
-    $form['commerce_registration']['reminder'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Send Reminder Emails'),
-      '#parents' => array('commerce_registration', 'reminder'),
-    );
-    $form['commerce_registration']['reminder_times'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Reminder Email Times'),
-      '#parents' => array('commerce_registration', 'reminder_times'),
-    );
-    $form['commerce_registration']['notify'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Send Notification Emails'),
-      '#parents' => array('commerce_registration', 'notify'),
-    );
-    $form['commerce_registration']['notify_emails'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Emails to Send Notifications To'),
-      '#parents' => array('commerce_registration', 'notify_emails'),
-    );
+    unset($form['registration_settings']['actions']);
     $form['actions']['submit']['#submit'][] = 'commerce_registration_product_ui_form_submit';
   }
 }
@@ -340,21 +308,34 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
  * Submission handler for store UI form alterations.
  */
 function commerce_registration_product_ui_form_submit($form, $form_state) {
-  if (isset($form_state['values']['commerce_registration'])) {
+  if (isset($form_state['values']['registration_settings'])) {
     $product = $form_state['build_info']['args'][0];
     $product_info = array(
       'id' => $product->product_id,
       'type' => 'commerce_product',
       'bundle' => $product->type,
     );
-    $status = $form_state['values']['commerce_registration']['status'];
-    $bundle = $form_state['values']['commerce_registration']['bundle'];
-    $settings = registration_default_settings();
-    $settings['status'] = $status;
+    $status = $form_state['values']['registration_settings']['settings']['status'];
+    $bundle = $form_state['values']['registration_settings']['settings']['bundle'];
+    $settings = registration_entity_settings($product_info);
+    $new = array_merge($settings, $form_state['values']['registration_settings']);
+    $new['status'] = $status;
+    $new['settings']['open_date'] = strtotime($new['settings']['open_date']);
+    $new['settings']['close_date'] = strtotime($new['settings']['close_date']);
+    unset($new['settings']['bundle']);
     $row_data = array(
       'registration_bundle' => $bundle,
-      'settings' => serialize($settings),
+      'settings' => serialize($new),
     );
-    registration_update_entity_settings($product_info, $row_data);
+    if (1 == $status) {
+      registration_update_entity_settings($product_info, $row_data);
+    }
+    else {
+      db_delete('registration_attach')
+        ->condition('entity_type', 'commerce_product')
+        ->condition('entity_bundle', $product->type)
+        ->condition('entity_id', $product->product_id)
+        ->execute();
+    }
   }
 }
