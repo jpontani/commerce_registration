@@ -252,12 +252,14 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         if (registration_entity_registration_status($entity) == 1) {
           $submit = $form['submit'];
           unset($form['submit']);
-          $capacity = registration_entity_slots_available($entity);
-          $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
-          $form['capacity'] = array(
-            '#type' => 'markup',
-            '#markup' => '<em>' . $capacity . '</em>',
-          );
+          if (registration_entity_has_capacity_limit($entity)) {
+            $capacity = registration_entity_slots_available($entity);
+            $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
+            $form['capacity'] = array(
+              '#type' => 'markup',
+              '#markup' => '<em>' . $capacity . '</em>',
+            );
+          }
           $form['submit'] = $submit;
         }
         break;

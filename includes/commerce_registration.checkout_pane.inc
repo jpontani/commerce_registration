@@ -69,7 +69,16 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->author_uid = $user->uid;
           $entity->status = 0;
           $entity->order_id = $order->order_id;
+          $entity->mail = $user->mail;
         }
+        $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]['mail'] = array(
+          '#weight' => -50,
+          '#type' => 'textfield',
+          '#title' => t('Email Address'),
+          '#default_value' => $entity->mail,
+          '#required' => TRUE,
+          '#parents' => array('registration_information', 'prod-' . $product->sku->value(), 'prod-' . $product->sku->value() . '-reg-' . $i, 'email'),
+        );
         // attach the entity's fields to the form
         field_attach_form('registration', $entity, $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
         $fields = &$form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i];
