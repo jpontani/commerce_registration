@@ -265,14 +265,19 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           unset($form['submit']);
           if (registration_entity_has_capacity_limit($entity)) {
             $capacity = registration_entity_slots_available($entity);
+<<<<<<< HEAD
             $settings = registration_entity_settings($entity);
             $wl = (0 == $settings['settings']['waitlist'] ? "" : "(waitlist only)");
             $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available @wl', array('@wl' => $wl)));
+=======
+            $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
+>>>>>>> 9d989aef1114bc89a7905b54a3c817cb7d040221
             $form['capacity'] = array(
               '#type' => 'markup',
               '#markup' => '<em>' . $capacity . '</em>',
             );
           }
+<<<<<<< HEAD
           if (registration_can_register($entity)) {
             $form['submit'] = $submit;
           }
@@ -282,6 +287,9 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
               '#markup' => t('<p><strong>This item is currently unavailable.</strong></p>'),
             );
           }
+=======
+          $form['submit'] = $submit;
+>>>>>>> 9d989aef1114bc89a7905b54a3c817cb7d040221
         }
         break;
     }
