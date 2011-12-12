@@ -18,6 +18,14 @@ function commerce_registration_menu() {
     'page arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
   );
+  
+  $menu['admin/commerce/registrations'] = array(
+    'title' => 'Registrations',
+    'description' => 'Manage product registrations that have been purchased.',
+    'access arguments' => array('view any registration'),
+    'page callback' => 'commerce_registration_admin_overview',
+    'file' => 'includes/commerce_registration.admin.inc',
+  );
 
   return $menu;
 }
@@ -177,12 +185,15 @@ function commerce_registration_get_product_title($product) {
   );
   $status = registration_entity_registration_status($entity);
   if ($status == 1) {
+    $settings = registration_entity_settings($entity);
+    $waitlist = (0 == $settings['settings']['waitlist'] ? "" : ", waitlist only");
     $avail = registration_entity_slots_available($entity);
-    $capacity = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available, waitlist only');
-    return t('@title (@capacity)',
+    $capacity = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available');
+    return t('@title (@capacity @wl)',
       array(
         '@title' => $product->title,
         '@capacity' => $capacity,
+        '@wl' => $waitlist,
       )
     );
   }
@@ -252,13 +263,25 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         if (registration_entity_registration_status($entity) == 1) {
           $submit = $form['submit'];
           unset($form['submit']);
-          $capacity = registration_entity_slots_available($entity);
-          $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available (waitlist only)'));
-          $form['capacity'] = array(
-            '#type' => 'markup',
-            '#markup' => '<em>' . $capacity . '</em>',
-          );
-          $form['submit'] = $submit;
+          if (registration_entity_has_capacity_limit($entity)) {
+            $capacity = registration_entity_slots_available($entity);
+            $settings = registration_entity_settings($entity);
+            $wl = (0 == $settings['settings']['waitlist'] ? "" : "(waitlist only)");
+            $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available @wl', array('@wl' => $wl)));
+            $form['capacity'] = array(
+              '#type' => 'markup',
+              '#markup' => '<em>' . $capacity . '</em>',
+            );
+          }
+          if (registration_can_register($entity)) {
+            $form['submit'] = $submit;
+          }
+          else {
+            $form['not_available'] = array(
+              '#type' => 'markup',
+              '#markup' => t('<p><strong>This item is currently unavailable.</strong></p>'),
+            );
+          }
         }
         break;
     }
