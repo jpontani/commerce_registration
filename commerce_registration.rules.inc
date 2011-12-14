@@ -390,8 +390,8 @@ function commerce_registration_mark_paid($order) {
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        // we set status to 1 for PAID and save the entity
-        $entity->status = 1;
+        // we set status to confirm for PAID and save the entity
+        $entity->status = 'confirm';
         entity_save('registration', $entity);
       }
     }

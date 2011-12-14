@@ -67,9 +67,14 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->created = REQUEST_TIME;
           $entity->updated = REQUEST_TIME;
           $entity->author_uid = $user->uid;
-          $entity->status = 0;
+          $entity->status = 'pending';
           $entity->order_id = $order->order_id;
-          $entity->mail = $user->mail;
+          if ($user->uid != 0) {
+            $entity->mail = $user->mail;
+          }
+          else {
+            $entity->mail = '';
+          }
         }
         $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]['mail'] = array(
           '#weight' => -50,

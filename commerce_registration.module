@@ -189,7 +189,7 @@ function commerce_registration_get_product_title($product) {
     $waitlist = (0 == $settings['settings']['waitlist'] ? "" : ", waitlist only");
     $avail = registration_entity_slots_available($entity);
     $capacity = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available');
-    return t('@title (@capacity @wl)',
+    return t('@title (@capacity@wl)',
       array(
         '@title' => $product->title,
         '@capacity' => $capacity,
@@ -361,4 +361,14 @@ function commerce_registration_product_ui_form_submit($form, $form_state) {
         ->execute();
     }
   }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_registration_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_registration') . '/includes/views',
+  );
 }
