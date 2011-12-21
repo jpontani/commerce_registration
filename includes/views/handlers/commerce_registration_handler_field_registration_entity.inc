@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Commerce Registration attached entity views field handler.
+ */
 
 class commerce_registration_handler_field_registration_entity extends views_handler_field {
   function construct() {
