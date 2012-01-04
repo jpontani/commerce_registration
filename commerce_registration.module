@@ -137,19 +137,20 @@ function commerce_registration_commerce_line_item_type_info() {
       'title' => 'commerce_registration_waitlist_title',
     ),
   );
+  
+  $items['registration'] = array(
+    'type' => 'registration',
+    'name' => t('Registration'),
+    'product' => FALSE,
+    'description' => t('Contains the registration information for product enabled line items.'),
+    'base' => 'commerce_registration_lineitem',
+  );
 
   return $items;
 }
 
 function commerce_registration_commerce_line_item_type_info_alter(&$line_item_types) {
   $line_item_types['product']['callbacks']['title'] = 'commerce_registration_product_title';
-}
-
-/**
- * Line item configuration callback.
- */
-function commerce_registration_waitlist_configuration() {
-  
 }
 
 /**
@@ -203,7 +204,7 @@ function commerce_registration_get_product_title($product) {
 }
 
 /**
- * Line item title callback.
+ * Waitlist line item title callback.
  */
 function commerce_registration_waitlist_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
@@ -222,16 +223,44 @@ function commerce_registration_waitlist_title($line_item) {
 }
 
 /**
- * Line item add form callback.
+ * Waitlist line item configuration callback.
+ */
+function commerce_registration_waitlist_configuration() {
+  
+}
+
+/**
+ * Waitlist line item add form callback.
  */
 function commerce_registration_waitlist_add_form(&$form_state) {
   
 }
 
 /**
- * Line item item add form submit callback.
+ * Waitlist line item item add form submit callback.
  */
 function commerce_registration_waitlist_add_form_submit(&$line_item, $element, &$form_state, $form) {
+  
+}
+
+/**
+ * Registration line item configuration callback.
+ */
+function commerce_registration_lineitem_configuration() {
+  
+}
+
+/**
+ * Registration line item add form callback.
+ */
+function commerce_registration_lineitem_add_form(&$form_state) {
+  
+}
+
+/**
+ * Registration line item item add form submit callback.
+ */
+function commerce_registration_lineitem_add_form_submit(&$line_item, $element, &$form_state, $form) {
   
 }
 
