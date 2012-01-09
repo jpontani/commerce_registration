@@ -39,8 +39,13 @@ function commerce_registration_registration_page_access($node) {
   if (isset($node->field_commerce_product)) {
     foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
       $prod = commerce_product_load($product['product_id']);
-      $status = registration_entity_registration_status('commerce_product', $prod->type, $product['product_id']);
-      $bundle = registration_entity_registration_bundle('commerce_product', $prod->type, $product['product_id']);
+      $info = array(
+        'id' => $product['product_id'],
+        'type' => 'commerce_product',
+        'bundle' => $prod->type,
+      );
+      $status = registration_entity_registration_status($info);
+      $bundle = registration_entity_registration_bundle($info);
       if ($status == 1 && $bundle != '' && (user_access('view any registration') || user_access('view ' . $bundle . ' registration'))) {
         return TRUE;
       }
