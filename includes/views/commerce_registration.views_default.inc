@@ -2,7 +2,7 @@
 
 function commerce_registration_views_default_views() {
   $view = new view;
-  $view->name = 'commerce_registration_admin_registrations';
+  $view->name = 'commerce_registration_admin_regs';
   $view->description = '';
   $view->tag = 'default';
   $view->base_table = 'registration';
@@ -94,6 +94,13 @@ function commerce_registration_views_default_views() {
       ),
       'views_bulk_operations_script_action' => array(
         'selected' => 0,
+        'use_queue' => 0,
+        'skip_confirmation' => 0,
+        'override_label' => 0,
+        'label' => '',
+      ),
+      'rules_registration_refund' => array(
+        'selected' => 1,
         'use_queue' => 0,
         'skip_confirmation' => 0,
         'override_label' => 0,
@@ -400,8 +407,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['filters']['status']['value'] = 'confirm';
 
   /* Display: Block */
-  $handler = $view->new_display('block', 'Block', 'block');
-  
+  $handler = $view->new_display('block', 'Block', 'block');  
 
   $views['commerce_registration_admin_registrations'] = $view;
   
