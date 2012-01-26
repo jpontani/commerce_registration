@@ -227,7 +227,7 @@ function commerce_registration_lineitem_add_form_submit(&$line_item, $element, &
  * capacity if available.
  */
 function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
-  // Add waitlist/slots available text to Add to Cart form.
+  // Add slots available text to Add to Cart form.
   if (substr($form_id, 0, 30) == 'commerce_cart_add_to_cart_form') {
     switch ($form['product_id']['#type']) {
       case "select":

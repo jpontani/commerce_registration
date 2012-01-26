@@ -59,48 +59,6 @@ function commerce_registration_rules_condition_info() {
       'execute' => 'commerce_registration_item_can_register',
     ),
   );
-  $conditions['commerce_registration_line_item_is_waitlist'] = array(
-    'label' => t('Line Item type is waitlist'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Commerce Line Item'),
-        'description' => t('The Commerce Line Item to check the line item type.'),
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_line_item_is_waitlist',
-    ),
-  );
-  $conditions['commerce_registration_line_item_is_on_waitlist'] = array(
-    'label' => t('Product is already on the waitlist'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Commerce Line Item'),
-        'description' => t('The Commerce Line Item to check for an existing wait list line item.'),
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_line_item_is_on_waitlist',
-    ),
-  );
-  $conditions['commerce_registration_can_be_waitlisted'] = array(
-    'label' => t('Product has a waitlist'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Commerce Line Item'),
-        'description' => t('The Commerce Line Item to check if the product can be put on a waitlist.'),
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_can_be_waitlisted',
-    ),
-  );
 
   return $conditions;
 }
@@ -141,35 +99,6 @@ function commerce_registration_rules_action_info() {
     ),
   );
 
-  // Waitlist actions
-  $actions['commerce_registration_move_to_waitlist'] = array(
-    'label' => t('Move product to waitlist'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Commerce Line Item'),
-        'description' => t('The Commerce Line Item containing the product to add to the waitlist.'),
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_move_to_waitlist',
-    ),
-  );
-  $actions['commerce_registration_waitlist_to_cart'] = array(
-    'label' => t('Move product from waitlist to cart'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Commerce Line Item'),
-        'description' => t('The Commerce Line Item containing the waitlist product to move back to the cart.'),
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_waitlist_to_cart',
-    ),
-  );
   $actions['commerce_registration_delete_line_item'] = array(
     'label' => t('Delete the line item'),
     'group' => t('Commerce Registration'),
@@ -194,14 +123,6 @@ function commerce_registration_rules_action_info() {
  * Condition callbacks for Commerce Registration rules.
  */
 
-/**
- * Condition callback.
- *
- * Checks if the line item is a waitlist line item.
- */
-function commerce_registration_line_item_is_waitlist($line_item) {
-  return ($line_item->type == 'waitlist' ? TRUE : FALSE);
-}
 /**
  * Condition callback.
  *
@@ -320,42 +241,6 @@ function commerce_registration_order_product_types_allowed($order, $types) {
 }
 
 /**
- * Condition callback.
- *
- * Checks for an existing line item of the same product.
- */
-function commerce_registration_line_item_is_on_waitlist($line_item) {
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $order = commerce_order_load($line_item_wrapper->order_id->value());
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
-    // If this line item matches the product being added...
-    if ($combine_line_item_wrapper->type->value() == 'waitlist' && 
-      $combine_line_item_wrapper->commerce_product->product_id->value() ==
-      $line_item_wrapper->commerce_product->product_id->value()) {
-        return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-/**
- * Condition callback.
- *
- * Checks if the line item product can be put on a waitlist.
- */
-function commerce_registration_can_be_waitlisted($line_item) {
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $info = array(
-    'id' => $line_item_wrapper->commerce_product->product_id->value(),
-    'type' => 'commerce_product',
-    'bundle' => $line_item_wrapper->commerce_product->type->value(),
-  );
-  $settings = registration_entity_settings($info);
-  return (!empty($settings) && isset($settings['settings']) ? $settings['settings']['waitlist'] : FALSE);
-}
-
-/**
  * @} End of "defgroup commerce_registration_rules_conditions".
  */
 
@@ -428,106 +313,6 @@ function commerce_registration_cancel_registrations($order) {
       }
     }
   }
-}
-
-/**
- * Action callback.
- *
- * Creates a new waitlist line item from an existing line item.
- *
- * Combines identical products on to a single line item.
- * @param $line_item
- *   Commerce Line Item that we are moving to a waitlist.
- */
-function commerce_registration_move_to_waitlist($line_item) {
-  if (!isset($line_item)) {
-    return;
-  }
-  $line_item->type = 'waitlist';
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $order = commerce_order_load($line_item_wrapper->order_id->value());
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  // We search for an existing line item of the same product to possibly
-  // combine with.
-  $combine_line_item = NULL;
-  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
-    // If this line item matches the product being added...
-    if (empty($combine_line_item) && 
-      $combine_line_item_wrapper->type->value() == 'waitlist' && 
-      $combine_line_item_wrapper->commerce_product->product_id->value() ==
-      $line_item_wrapper->commerce_product->product_id->value()) {
-        $combine_line_item = $combine_line_item_wrapper->value();
-    }
-  }
-  $new_line_item = clone $line_item;
-  $new_line_item->type = 'waitlist';
-  unset($new_line_item->line_item_id);
-
-  if (!empty($combine_line_item)) {
-    // Existing waitlist item, so we add it's quantity to our new line_item.
-    $new_line_item->quantity += $combine_line_item->quantity;
-  }
-  // Save the new line_item and add it to our order.
-  commerce_line_item_save($new_line_item);
-  $order_wrapper->commerce_line_items[] = $new_line_item;
-
-  if (!empty($combine_line_item)) {
-    // Existing waitlist item, we delete it so we don't have two identical line
-    // items.
-    $order = commerce_cart_order_product_line_item_delete($order, $combine_line_item->line_item_id);
-  }
-  commerce_order_save($order);
-
-  return $new_line_item;
-}
-
-/**
- * Action callback.
- *
- * Moves the product on the waitlist line item to a normal product line item.
- *
- * @param $line_item
- *   Commerce Line Item that we are moving to a normal product line item.
- */
-function commerce_registration_waitlist_to_cart($line_item) {
-  if (!isset($line_item)) {
-    return;
-  }
-  $line_item->type = 'product';
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $order = commerce_order_load($line_item_wrapper->order_id->value());
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  // We search for an existing line item of the same product to possibly
-  // combine with.
-  $combine_line_item = NULL;
-  foreach ($order_wrapper->commerce_line_items as $delta => $combine_line_item_wrapper) {
-    // If this line item matches the product being added...
-    if (empty($combine_line_item) && 
-      $combine_line_item_wrapper->type->value() == 'product' && 
-      $combine_line_item_wrapper->commerce_product->product_id->value() ==
-      $line_item_wrapper->commerce_product->product_id->value()) {
-        $combine_line_item = $combine_line_item_wrapper->value();
-    }
-  }
-  $new_line_item = clone $line_item;
-  unset($new_line_item->line_item_id);
-
-  if (!empty($combine_line_item)) {
-    // Existing waitlist item, so we add it's quantity to our new line_item.
-    $new_line_item->quantity += $combine_line_item->quantity;
-  }
-  // Save the new line_item and add it to our order.
-  commerce_line_item_save($new_line_item);
-  $order_wrapper->commerce_line_items[] = $new_line_item;
-
-  if (!empty($combine_line_item)) {
-    // Existing waitlist item, we delete it so we don't have two identical line
-    // items.
-    $order = commerce_cart_order_product_line_item_delete($order, $combine_line_item->line_item_id);
-    commerce_order_save($order);
-  }
-
-  return $new_line_item;
 }
 
 /**
