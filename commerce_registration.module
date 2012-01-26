@@ -46,7 +46,9 @@ function commerce_registration_registration_page_access($node) {
       );
       $status = registration_entity_registration_status($info);
       $bundle = registration_entity_registration_bundle($info);
-      if ($status == 1 && $bundle != '' && (user_access('view any registration') || user_access('view ' . $bundle . ' registration'))) {
+      if ($status == 1 && $bundle != '' &&
+        (user_access('view any registration') ||
+          user_access('view ' . $bundle . ' registration'))) {
         return TRUE;
       }
     }
@@ -65,7 +67,8 @@ function commerce_registration_registration_page($node) {
   $header = array(t('Order'), t('Date'), t('Product'), t('Registrant'));
   $rows = array();
   foreach ($prodids as $product_id) {
-    $reg = db_select('registration', 'r')->fields('r', array('registration_id', 'order_id', 'created', 'author_uid', 'user_uid'));
+    $reg = db_select('registration', 'r')->fields('r',
+      array('registration_id', 'order_id', 'created', 'author_uid', 'user_uid'));
     $reg->condition('r.entity_type', 'commerce_product')
       ->condition('r.eid', $product_id)
       ->condition('r.status', 1)
@@ -76,10 +79,12 @@ function commerce_registration_registration_page($node) {
       $prod = commerce_product_load($product_id);
       $registrant = user_load($row->user_uid);
       $rows[] = array(
-        l(t('Order #') . $row->order_id, 'user/' . $row->author_uid . '/orders/' . $row->order_id),
+        l(t('Order #') . $row->order_id, 'user/' . $row->author_uid .
+          '/orders/' . $row->order_id),
         date("F j, Y - g:i:s a", $row->created),
         $prod->title,
-        l('#' . $row->registration_id . ': ' . $registrant->name, 'registration/' . $row->registration_id),
+        l('#' . $row->registration_id . ': ' . $registrant->name,
+          'registration/' . $row->registration_id),
       );
     }
   }
@@ -130,18 +135,6 @@ function commerce_registration_commerce_checkout_pane_info() {
  */
 function commerce_registration_commerce_line_item_type_info() {
   $items = array();
-
-  $items['waitlist'] = array(
-    'type' => 'waitlist',
-    'name' => t('Waitlist'),
-    'product' => TRUE,
-    'description' => t('References a product that is out of stock or beyond registration capacity.'),
-    'add_form_submit_value' => t('Add product to waitlist'),
-    'base' => 'commerce_registration_waitlist',
-    'callbacks' => array(
-      'title' => 'commerce_registration_waitlist_title',
-    ),
-  );
   
   $items['registration'] = array(
     'type' => 'registration',
@@ -192,60 +185,18 @@ function commerce_registration_get_product_title($product) {
   $status = registration_entity_registration_status($entity);
   if ($status == 1) {
     $settings = registration_entity_settings($entity);
-    $waitlist = (0 == $settings['settings']['waitlist'] ? "" : ", waitlist only");
     $avail = registration_entity_slots_available($entity);
     $capacity = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available');
-    return t('@title (@capacity@wl)',
+    return t('@title (@capacity)',
       array(
         '@title' => $product->title,
         '@capacity' => $capacity,
-        '@wl' => $waitlist,
       )
     );
   }
   else {
     return $product->title;
   }
-}
-
-/**
- * Waitlist line item title callback.
- */
-function commerce_registration_waitlist_title($line_item) {
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $entity = array(
-    'id' => $line_item_wrapper->commerce_product->product_id->value(),
-    'type' => 'commerce_product',
-    'bundle' => $line_item_wrapper->commerce_product->type->value(),
-  );
-  $avail = registration_entity_slots_available($entity);
-  return t('<em>@title (@capacity available) (waitlisted)</em>',
-    array(
-      '@title' => $line_item_wrapper->commerce_product->title->value(),
-      '@capacity' => format_plural($avail, '1 slot', '@count slots'),
-    )
-  );
-}
-
-/**
- * Waitlist line item configuration callback.
- */
-function commerce_registration_waitlist_configuration() {
-  
-}
-
-/**
- * Waitlist line item add form callback.
- */
-function commerce_registration_waitlist_add_form(&$form_state) {
-  
-}
-
-/**
- * Waitlist line item item add form submit callback.
- */
-function commerce_registration_waitlist_add_form_submit(&$line_item, $element, &$form_state, $form) {
-  
 }
 
 /**
@@ -300,8 +251,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           if (registration_entity_has_capacity_limit($entity)) {
             $capacity = registration_entity_slots_available($entity);
             $settings = registration_entity_settings($entity);
-            $wl = (0 == $settings['settings']['waitlist'] ? "" : "(waitlist only)");
-            $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available @wl', array('@wl' => $wl)));
+            $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available'));
             $form['capacity'] = array(
               '#type' => 'markup',
               '#markup' => '<em>' . $capacity . '</em>',
