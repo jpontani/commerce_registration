@@ -22,7 +22,7 @@ function commerce_registration_menu() {
   $menu['admin/commerce/registrations'] = array(
     'title' => 'Registrations',
     'description' => 'Manage product registrations that have been purchased.',
-    'access arguments' => array('view any registration'),
+    'access arguments' => array('view registration'),
     'page callback' => 'commerce_registration_admin_overview',
     'file' => 'includes/commerce_registration.admin.inc',
   );

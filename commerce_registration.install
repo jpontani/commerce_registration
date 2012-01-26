@@ -1,9 +1,10 @@
 <?php
 /**
  * @file
- *  Commerce Registration install file.
+ * Commerce Registration install file.
  *
- *  Modify the registration schema to accomodate a commerce order ID number.
+ * Modify the registration schema to accomodate a commerce order ID number.
+ * 
  */
 
 /**
@@ -19,9 +20,14 @@ function commerce_registration_schema_alter(&$schema) {
 }
 
 /**
- * Implements hook_enable().
+ * Implements hook_install().
  */
-function commerce_registration_enable() {
-  commerce_line_item_configure_line_item_type(array('type' => 'waitlist'));
-  commerce_product_line_item_configuration(array('type' => 'waitlist'));
+function commerce_registration_install() {
+  // Add the new commerce order ID field to registrations.
+  db_add_field("registration", "order_id", array(
+    'description' => 'The order associated with this registration, if any.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0)
+  );
 }
