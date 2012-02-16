@@ -158,7 +158,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
           $entity,
           $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]
         );
-        registration_save($entity);
+        $order->data['register_entities']['prod-' . $product->sku->value()][$i] = $entity;
       }
     }
   }
@@ -188,6 +188,25 @@ function commerce_registration_information_review($form, $form_state, $checkout_
     }
   }
   return $msg;
+}
+
+/**
+ * Implements hook_commerce_checkout_complete().
+ */
+function commerce_registration_commerce_checkout_complete($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $settings = registration_entity_settings($id, 'commerce_product');
+    if (!empty($settings) && $settings['status'] == 1) {
+      $product = $line_item_wrapper->commerce_product;
+      $quantity = (int) $line_item_wrapper->quantity->value();
+      for ($i=0; $i<$quantity; $i++) {
+        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        registration_save($entity);
+      }
+    }
+  }
 }
 
 /**
