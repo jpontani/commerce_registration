@@ -22,14 +22,9 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
     $order->data['register_entities'] = array();
   }
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status(array(
-      'id' => $line_item_wrapper->commerce_product->product_id->value(),
-      'type' => 'commerce_product',
-      'bundle' => $type,
-      )
-    );
-    if ($can_register == 1) {
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $settings = registration_entity_settings($id, 'commerce_product');
+    if (!empty($settings) && $settings['status'] == 1) {
       $show_form = TRUE;
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -53,21 +48,13 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         }
         else {
           // entity doesn't exist, so we need to create a new registration
-          $bundle = registration_entity_registration_bundle(array(
-            'id' => $line_item_wrapper->commerce_product->product_id->value(),
-            'type' => 'commerce_product',
-            'bundle' => $type,
-            )
-          );
+          $bundle = registration_get_entity_registration_type('commerce_product', $line_item_wrapper->commerce_product);
           $entity = entity_create('registration', array('type' => $bundle));
-          $entity->bundle = $entity->type;
           $entity->entity_type = 'commerce_product';
-          $entity->entity_bundle = $product->type->value();
-          $entity->eid = $product->product_id->value();
+          $entity->entity_id = $product->product_id->value();
           $entity->created = REQUEST_TIME;
           $entity->updated = REQUEST_TIME;
           $entity->author_uid = $user->uid;
-          $entity->status = 'pending';
           $entity->order_id = $order->order_id;
           if ($user->uid != 0) {
             $entity->mail = $user->mail;
@@ -127,14 +114,9 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
 function commerce_registration_information_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status(array(
-      'id' => $line_item_wrapper->commerce_product->product_id->value(),
-      'type' => 'commerce_product',
-      'bundle' => $type,
-      )
-    );
-    if ($can_register == 1) {
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $settings = registration_entity_settings($id, 'commerce_product');
+    if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
@@ -158,14 +140,9 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
 function commerce_registration_information_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status(array(
-      'id' => $line_item_wrapper->commerce_product->product_id->value(),
-      'type' => 'commerce_product',
-      'bundle' => $type,
-      )
-    );
-    if ($can_register == 1) {
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $settings = registration_entity_settings($id, 'commerce_product');
+    if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
@@ -193,14 +170,9 @@ function commerce_registration_information_review($form, $form_state, $checkout_
   $msg = '';
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
-    $can_register = registration_entity_registration_status(array(
-      'id' => $line_item_wrapper->commerce_product->product_id->value(),
-      'type' => 'commerce_product',
-      'bundle' => $type,
-      )
-    );
-    if ($can_register == 1) {
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $settings = registration_entity_settings($id, 'commerce_product');
+    if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $msg .= '<em>' . $product->title->value() . ' (' . format_plural($quantity, '1 registration', '@count registrations') . '):</em><br />';

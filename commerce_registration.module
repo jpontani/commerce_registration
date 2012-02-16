@@ -235,6 +235,17 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Implements hook_entity_property_info_alter().
+ */
+function commerce_registration_entity_property_info_alter(&$info) {
+  $info['registration']['properties']['order_id'] = array(
+    'label' => t('Order ID'),
+    'type' => 'integer',
+    'description' => t('The order ID associated with this registration.'),
+  );
+}
+
+/**
  * Implements hook_views_api().
  */
 function commerce_registration_views_api() {
