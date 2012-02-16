@@ -48,10 +48,11 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         }
         else {
           // entity doesn't exist, so we need to create a new registration
-          $bundle = registration_get_entity_registration_type('commerce_product', $line_item_wrapper->commerce_product);
-          $entity = entity_create('registration', array('type' => $bundle));
+          $bundle = registration_get_entity_registration_type('commerce_product', $line_item_wrapper->commerce_product->value());
+          $entity = entity_get_controller('registration')->create(array('type' => $bundle));
           $entity->entity_type = 'commerce_product';
           $entity->entity_id = $product->product_id->value();
+          $entity->entity = entity_load_single($entity->entity_type, $entity->entity_id);
           $entity->created = REQUEST_TIME;
           $entity->updated = REQUEST_TIME;
           $entity->author_uid = $user->uid;
@@ -157,7 +158,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
           $entity,
           $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]
         );
-        entity_save('registration', $entity);
+        registration_save($entity);
       }
     }
   }
