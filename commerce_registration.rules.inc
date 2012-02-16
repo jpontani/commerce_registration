@@ -135,18 +135,9 @@ function commerce_registration_rules_action_info() {
  */
 function commerce_registration_order_has_registration($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $type = $line_item_wrapper->commerce_product->type->value();
   $id = $line_item_wrapper->commerce_product->product_id->value();
-  $can_register = registration_entity_registration_status(array(
-    'id' => $id,
-    'type' => 'commerce_product',
-    'bundle' => $type,
-    )
-  );
-  if ($can_register == 1) {
-    return TRUE;
-  }
-  return FALSE;
+  $settings = registration_entity_settings($id, 'commerce_product');
+  return !empty($settings);
 }
 
 /**
@@ -163,57 +154,8 @@ function commerce_registration_order_has_registration($line_item) {
  */
 function commerce_registration_item_can_register($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $entity = array(
-    'id' => $line_item_wrapper->commerce_product->product_id->value(),
-    'type' => 'commerce_product',
-    'bundle' => $line_item_wrapper->commerce_product->type->value(),
-  );
-  $settings = registration_entity_settings($entity);
-  if (!is_array($settings)) {
-    $settings = unserialize($settings);
-  }
-  $capacity = $settings['settings']['capacity'];
-  $startdate = $settings['settings']['open_date'];
-  $enddate = $settings['settings']['close_date'];
-  // $datesOk checks to make sure we are within the date range of registration.
-  $datesOk = FALSE;
-  // We first check to see if a date is even set for opening and closing
-  // If not, then registrations are open always.
-  if ($enddate == 0 && $startdate == 0) {
-    $datesOk = TRUE;
-  }
-  else {
-    if (REQUEST_TIME >= $startdate && REQUEST_TIME <= $enddate) {
-      $datesOk = TRUE;
-    }
-  }
-  // Next we see if we are within the opening and closing dates, or if they are
-  // always open.
-  if ($datesOk) {
-    if ($capacity != 0) {
-      $avail = registration_entity_slots_available($entity);
-      if ($avail > 0) {
-        // If there are slots available, we see if the quantity puts us beyond
-        // the capacity.
-        if ($line_item_wrapper->quantity->value() > $avail) {
-          // The quantity requested is greater than available slots.
-          return FALSE;
-        }
-        // There are slots available for the requested quantity.
-        return TRUE;
-      }
-      else
-      {
-        // There are no slots available.
-        return FALSE;
-      }
-    }
-    else {
-      // No registration capacity set. Always allow.
-      return TRUE;
-    }
-  }
-  return FALSE;
+  $id = $line_item_wrapper->commerce_product->product_id->value();
+  return registration_has_room($id, 'commerce_product');
 }
 
 /**
@@ -262,21 +204,12 @@ function commerce_registration_order_product_types_allowed($order, $types) {
 function commerce_registration_mark_paid($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    $can_register = registration_entity_registration_status(array(
-      'id' => $id,
-      'type' => 'commerce_product',
-      'bundle' => $type,
-      )
-    );
-    if ($can_register == 1) {
+    if (registration_has_room($id, 'commerce_product')) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        // we set status to confirm for PAID and save the entity
-        $entity->status = 'confirm';
         entity_save('registration', $entity);
       }
     }
@@ -294,15 +227,8 @@ function commerce_registration_mark_paid($order) {
 function commerce_registration_cancel_registrations($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    $can_register = registration_entity_registration_status(array(
-      'id' => $id,
-      'type' => 'commerce_product',
-      'bundle' => $type,
-      )
-    );
-    if ($can_register == 1) {
+    if (registration_has_room($id, 'commerce_product')) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {

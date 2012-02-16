@@ -22,7 +22,7 @@ function commerce_registration_menu() {
   $menu['admin/commerce/registrations'] = array(
     'title' => 'Registrations',
     'description' => 'Manage product registrations that have been purchased.',
-    'access arguments' => array('view registration'),
+    'access arguments' => array('administer registration'),
     'page callback' => 'commerce_registration_admin_overview',
     'file' => 'includes/commerce_registration.admin.inc',
   );
@@ -64,39 +64,12 @@ function commerce_registration_registration_page($node) {
   foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
     $prodids[] = (int) $product['product_id'];
   }
-  $header = array(t('Order'), t('Date'), t('Product'), t('Registrant'));
-  $rows = array();
+  $out = "";
   foreach ($prodids as $product_id) {
-    $reg = db_select('registration', 'r')->fields('r',
-      array('registration_id', 'order_id', 'created', 'author_uid', 'user_uid'));
-    $reg->condition('r.entity_type', 'commerce_product')
-      ->condition('r.eid', $product_id)
-      ->condition('r.status', 1)
-      ->condition('r.order_id', 0, '!=')
-      ->orderBy('r.created', 'DESC');
-    $reg = $reg->execute();
-    foreach ($reg as $row) {
-      $prod = commerce_product_load($product_id);
-      $registrant = user_load($row->user_uid);
-      $rows[] = array(
-        l(t('Order #') . $row->order_id, 'user/' . $row->author_uid .
-          '/orders/' . $row->order_id),
-        date("F j, Y - g:i:s a", $row->created),
-        $prod->title,
-        l('#' . $row->registration_id . ': ' . $registrant->name,
-          'registration/' . $row->registration_id),
-      );
-    }
+    $prod = commerce_product_load($product_id);
+    $out .= registration_registrations_page('commerce_product', $prod);
   }
-  if (empty($rows)) {
-    $rows[] = array(
-      array(
-        'data' => t('There are no registrations for any products for this node yet.'),
-        'colspan' => 4,
-      ),
-    );
-  }
-  return theme('table', array('header' => $header, 'rows' => $rows));
+  return $out; //theme('table', array('header' => $header, 'rows' => $rows));
 }
 
 /**
@@ -177,15 +150,11 @@ function commerce_registration_product_title($line_item) {
  *   Product title with remaining capacity if available.
  */
 function commerce_registration_get_product_title($product) {
-  $entity = array(
-    'id' => $product->product_id,
-    'type' => 'commerce_product',
-    'bundle' => $product->type,
-  );
-  $status = registration_entity_registration_status($entity);
-  if ($status == 1) {
-    $settings = registration_entity_settings($entity);
-    $avail = registration_entity_slots_available($entity);
+  $settings = registration_entity_settings($product->product_id, 'commerce_product');
+  if ($settings['status'] == 1) {
+    $avail = (int) $settings['capacity'];
+    $filled = (int) registration_event_count($product->product_id, 'commerce_product');
+    $avail -= $filled;
     $capacity = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available');
     return t('@title (@capacity)',
       array(
@@ -240,24 +209,17 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         break;
       case "hidden":
         $product = commerce_product_load($form['product_id']['#value']);
-        $entity = array(
-          'id' => $product->product_id,
-          'type' => 'commerce_product',
-          'bundle' => $product->type,
-        );
-        if (registration_entity_registration_status($entity) == 1) {
+        $settings = registration_entity_settings($product->product_id, 'commerce_product');
+        if ($setings['status'] == 1) {
           $submit = $form['submit'];
           unset($form['submit']);
-          if (registration_entity_has_capacity_limit($entity)) {
-            $capacity = registration_entity_slots_available($entity);
-            $settings = registration_entity_settings($entity);
-            $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available'));
-            $form['capacity'] = array(
-              '#type' => 'markup',
-              '#markup' => '<em>' . $capacity . '</em>',
-            );
-          }
-          if (registration_can_register($entity)) {
+          $capacity = $settings['capacity'];
+          $capacity = ($capacity != 0 ? format_plural($capacity, '1 slot available', '@count slots available') : t('No slots available'));
+          $form['capacity'] = array(
+            '#type' => 'markup',
+            '#markup' => '<em>' . $capacity . '</em>',
+          );
+          if (registration_has_room($product->product_id, 'commerce_product')) {
             $form['submit'] = $submit;
           }
           else {
@@ -268,81 +230,6 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           }
         }
         break;
-    }
-  }
-  // Add administrative Registration settings to Product Add/Edit form.
-  if (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
-    if (!function_exists('registration_bundle_options')) {
-      module_load_include('inc', 'registration', 'includes/registration.admin');
-    }
-    $product_info = array(
-      'id' => 0,
-      'type' => 'commerce_product',
-      'bundle' => 'product',
-    );
-    if (isset($form_state['build_info']['args'][0])) {
-      $product = $form_state['build_info']['args'][0];
-      $product_info['id'] = $product->product_id;
-      $product_info['bundle'] = $product->type;
-    }
-    $form['registration_settings'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Registration Settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => !registration_entity_registration_status($product_info),
-    );
-    $settings = registration_entity_settings($product_info);
-    $form['registration_settings'] += registration_default_settings_base_form(array('registration_settings'), $settings);
-    $open = $form['registration_settings']['settings']['open_date']['#default_value'];
-    $close = $form['registration_settings']['settings']['close_date']['#default_value'];
-    $form['registration_settings']['settings']['open_date']['#default_value'] = date('c', (int) $open);
-    $form['registration_settings']['settings']['close_date']['#default_value'] = date('c', (int) $close);
-    $form['registration_settings']['settings']['status']['#weight'] = -2;
-    $form['registration_settings']['settings']['bundle'] = array(
-      '#type' => 'select',
-      '#options' => registration_bundle_options(),
-      '#title' => t('Registration Bundle'),
-      '#parents' => array('registration_settings', 'settings', 'bundle'),
-      '#weight' => -1,
-      '#default_value' => registration_entity_registration_bundle($product_info),
-    );
-    unset($form['registration_settings']['actions']);
-    $form['actions']['submit']['#submit'][] = 'commerce_registration_product_ui_form_submit';
-  }
-}
-
-/**
- * Submission handler for store UI form alterations.
- */
-function commerce_registration_product_ui_form_submit($form, $form_state) {
-  if (isset($form_state['values']['registration_settings'])) {
-    $product = $form_state['build_info']['args'][0];
-    $product_info = array(
-      'id' => $product->product_id,
-      'type' => 'commerce_product',
-      'bundle' => $product->type,
-    );
-    $status = $form_state['values']['registration_settings']['settings']['status'];
-    $bundle = $form_state['values']['registration_settings']['settings']['bundle'];
-    $settings = registration_entity_settings($product_info);
-    $new = array_merge($settings, $form_state['values']['registration_settings']);
-    $new['status'] = $status;
-    $new['settings']['open_date'] = strtotime($new['settings']['open_date']);
-    $new['settings']['close_date'] = strtotime($new['settings']['close_date']);
-    unset($new['settings']['bundle']);
-    $row_data = array(
-      'registration_bundle' => $bundle,
-      'settings' => serialize($new),
-    );
-    if (1 == $status) {
-      registration_update_entity_settings($product_info, $row_data);
-    }
-    else {
-      db_delete('registration_attach')
-        ->condition('entity_type', 'commerce_product')
-        ->condition('entity_bundle', $product->type)
-        ->condition('entity_id', $product->product_id)
-        ->execute();
     }
   }
 }
