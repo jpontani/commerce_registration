@@ -40,7 +40,7 @@ function commerce_registration_registration_page_access($node) {
   foreach ($fields as $field) {
     if (isset($node->{$field['field_name']})) {
       foreach ($node->{$field['field_name']} as $product) {
-        $settings = registration_entity_settings($product['product_id'], 'commerce_product');
+        $settings = registration_entity_settings($product[0]['product_id'], 'commerce_product');
         if (!empty($settings) && user_access('view registration')){
           return TRUE;
         }
@@ -59,7 +59,7 @@ function commerce_registration_registration_page($node) {
   foreach ($fields as $field) {
     if (isset($node->{$field['field_name']})) {
       foreach ($node->{$field['field_name']} as $product) {
-        $prodids[] = (int) $product['product_id'];
+        $prodids[] = (int) $product[0]['product_id'];
       }
     }
   }
@@ -105,7 +105,7 @@ function commerce_registration_commerce_checkout_pane_info() {
 /**
  * Implements hook_commerce_line_item_type_info().
  */
-function commerce_registration_commerce_line_item_type_info() {
+function commerce_registration_commerce_line_item_type_info_old() {
   $items = array();
   
   $items['registration'] = array(
@@ -268,28 +268,34 @@ function commerce_registration_field_extra_fields_alter(&$info) {
   foreach (commerce_info_fields('commerce_product_reference') as $field_name => $field) {
     foreach ($field['bundles'] as $entity_type => $bundles) {
       if ($entity_type == 'commerce_line_item' || $entity_type == 'commerce_product') {
+        // Skip line items and products, don't want to remove these fields.
         continue;
       }
       foreach ($bundles as $bundle_name) {
         $product_fields = commerce_product_field_extra_fields();
         if (empty($product_fields['commerce_product'])) {
+          // Skip if there are no commerce product extra fields.
           continue;
         }
         // Loop through each field on the product, and if it's a Registration,
-        // unset it's display value.
+        // hide it.
         foreach ($product_fields['commerce_product'] as $key => $value) {
           foreach ($value['display'] as $product_extra_field_name => $product_extra_field) {
             if ($product_extra_field['label'] == t('Registration')) {
-              unset($info[$entity_type][$bundle_name]['display']['product:' . $product_extra_field_name]);
+              $tempfield = &$info[$entity_type][$bundle_name]['display']['product:' . $product_extra_field_name]['display'];
+              foreach ($tempfield as $display => $settings) {
+                $tempfield[$display]['visible'] = FALSE;
+              }
             }
           }
         }
         // Loop through all field instances on products, and if each field is a
-        // registration, unset it's display value.
+        // registration, hide it.
         foreach (field_info_instances('commerce_product') as $product_bundle_name => $product_fields) {
           foreach ($product_fields as $product_field_name => $product_field) {
             if ($product_field['label'] == t('Registration')) {
-              unset($info[$entity_type][$bundle_name]['display']['product:' . $product_field_name]);
+              $info[$entity_type][$bundle_name]['display']['product:' . $product_field_name]['configurable'] = FALSE;
+              $info[$entity_type][$bundle_name]['display']['product:' . $product_field_name]['visible'] = FALSE;
             }
           }
         }

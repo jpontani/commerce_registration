@@ -114,14 +114,27 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
  */
 function commerce_registration_information_checkout_form_validate($form, &$form_state, $checkout_pane, $order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $ret = TRUE;
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
     $settings = registration_entity_settings($id, 'commerce_product');
     if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
+      $emails = array();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        $mail = $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]['mail'];
+        if (in_array($mail, $emails)) {
+          form_set_error(
+            "registration_information][prod-" . $product->sku->value() .
+              "][prod-" . $product->sku->value() . "-reg-" . $i . "][mail",
+            t("Email addresses must be unique for each registrant."));
+          $ret = FALSE;
+        }
+        else {
+          $emails[] = $mail;
+        }
         // let other modules do any validation necessary
         field_attach_form_validate(
           'registration',
@@ -132,7 +145,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       }
     }
   }
-  return TRUE;
+  return $ret;
 }
 
 /**
@@ -198,7 +211,7 @@ function commerce_registration_commerce_checkout_complete($order) {
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
     $settings = registration_entity_settings($id, 'commerce_product');
-    if (!empty($settings) && $settings['status'] == 1) {
+    if (!empty($settings) && (int) $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
