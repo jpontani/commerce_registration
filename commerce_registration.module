@@ -36,11 +36,14 @@ function commerce_registration_menu() {
  *   enabled.
  */
 function commerce_registration_registration_page_access($node) {
-  if (isset($node->field_commerce_product)) {
-    foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
-      $settings = registration_entity_settings($product['product_id'], 'commerce_product');
-      if ($settings['status'] == 1 && user_access('view registration')){
-        return TRUE;
+  $fields = field_read_fields(array('type' => 'commerce_product_reference'));
+  foreach ($fields as $field) {
+    if (isset($node->{$field['field_name']})) {
+      foreach ($node->{$field['field_name']} as $product) {
+        $settings = registration_entity_settings($product['product_id'], 'commerce_product');
+        if (!empty($settings) && user_access('view registration')){
+          return TRUE;
+        }
       }
     }
   }
@@ -52,15 +55,20 @@ function commerce_registration_registration_page_access($node) {
  */
 function commerce_registration_registration_page($node) {
   $prodids = array();
-  foreach ($node->field_commerce_product[LANGUAGE_NONE] as $product) {
-    $prodids[] = (int) $product['product_id'];
+  $fields = field_read_fields(array('type' => 'commerce_product_reference'));
+  foreach ($fields as $field) {
+    if (isset($node->{$field['field_name']})) {
+      foreach ($node->{$field['field_name']} as $product) {
+        $prodids[] = (int) $product['product_id'];
+      }
+    }
   }
   $out = "";
   foreach ($prodids as $product_id) {
     $prod = commerce_product_load($product_id);
     $out .= registration_registrations_page('commerce_product', $prod);
   }
-  return $out; //theme('table', array('header' => $header, 'rows' => $rows));
+  return $out;
 }
 
 /**
@@ -226,6 +234,9 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         break;
     }
   }
+  else if (substr($form_id, 0, 30) == 'product ui form') {
+    // Add settings to Commerce Product Edit Form
+  }
 }
 
 /**
@@ -247,4 +258,42 @@ function commerce_registration_views_api() {
     'api' => 3,
     'path' => drupal_get_path('module', 'commerce_registration') . '/includes/views',
   );
+}
+
+/**
+ * Implements hook_field_extra_fields_alter().
+ */
+function commerce_registration_field_extra_fields_alter(&$info) {
+  // Loop through the product reference fields.
+  foreach (commerce_info_fields('commerce_product_reference') as $field_name => $field) {
+    foreach ($field['bundles'] as $entity_type => $bundles) {
+      if ($entity_type == 'commerce_line_item' || $entity_type == 'commerce_product') {
+        continue;
+      }
+      foreach ($bundles as $bundle_name) {
+        $product_fields = commerce_product_field_extra_fields();
+        if (empty($product_fields['commerce_product'])) {
+          continue;
+        }
+        // Loop through each field on the product, and if it's a Registration,
+        // unset it's display value.
+        foreach ($product_fields['commerce_product'] as $key => $value) {
+          foreach ($value['display'] as $product_extra_field_name => $product_extra_field) {
+            if ($product_extra_field['label'] == t('Registration')) {
+              unset($info[$entity_type][$bundle_name]['display']['product:' . $product_extra_field_name]);
+            }
+          }
+        }
+        // Loop through all field instances on products, and if each field is a
+        // registration, unset it's display value.
+        foreach (field_info_instances('commerce_product') as $product_bundle_name => $product_fields) {
+          foreach ($product_fields as $product_field_name => $product_field) {
+            if ($product_field['label'] == t('Registration')) {
+              unset($info[$entity_type][$bundle_name]['display']['product:' . $product_field_name]);
+            }
+          }
+        }
+      }
+    }
+  }
 }
