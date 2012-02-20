@@ -234,8 +234,40 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         break;
     }
   }
-  else if (substr($form_id, 0, 30) == 'product ui form') {
-    // Add settings to Commerce Product Edit Form
+  else if (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
+    // Add settings to Commerce Product Add/Edit Form
+    $product = $form_state['commerce_product'];
+    if (!function_exists("registration_registrations_settings_form")) {
+      module_load_include("inc", "registration", "/includes/registration.forms");
+    }
+    if (!function_exists("commerce_registration_registrations_settings_form_validate")) {
+      module_load_include("inc", "commerce_registration", "/includes/commerce_registration.forms");
+    }
+    // Add validation and submission handlers to the form.
+    $form['#validate'][] = "commerce_registration_registration_settings_form_validate";
+    $form['actions']['submit']['#submit'][] = "commerce_registration_registration_settings_form_submit";
+    $form['registration_settings'] = array(
+      '#title' => t('Registration Settings'),
+      '#type' => "fieldset",
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#weight' => 45,
+    );
+    // Grab the registration settings form for this entity.
+    $addform = registration_registrations_settings_form(array(), $form_state, "commerce_product", $product);
+    // Remove the save button for this form since we have one already.
+    unset($addform['save']);
+    // We rename the registration settings form's status field to be reg_status
+    // so our validation and submission doesn't overwrite the product's status.
+    $addform['reg_status'] = $addform['status'];
+    $addform['reg_status']['#weight'] = -20;
+    unset($addform['status']);
+    // Add parents to each registration setting so we can get the values.
+    foreach ($addform as $key => $array) {
+      $addform[$key]['#parents'] = array('registration_settings', $key);
+    }
+    // Add the registration settings form to the base form.
+    $form['registration_settings'] += $addform;
   }
 }
 

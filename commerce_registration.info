@@ -7,3 +7,4 @@ dependencies[] = commerce
 dependencies[] = registration
 
 files[] = includes/views/handlers/commerce_registration_handler_field_registration_entity.inc
+files[] = includes/commerce_registration.forms.inc
