@@ -24,27 +24,6 @@ function commerce_registration_rules_condition_info() {
       'execute' => 'commerce_registration_order_has_registration',
     ),
   );
-  $conditions['commerce_registration_multiple_product_types_allowed'] = array(
-    'label' => t('Order contains only specific product types.'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_order' => array(
-        'type' => 'commerce_order',
-        'label' => t('Commerce Order'),
-        'description' => t('The Commerce Order whose line items should be checked for allowed product types.'),
-      ),
-      'product_types' => array(
-        'type' => 'list<text>',
-        'label' => t('Product Types'),
-        'description' => t('The product types to allow in the cart.'),
-        'options list' => 'commerce_registration_product_types',
-        'restriction' => 'input',
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_order_product_types_allowed',
-    ),
-  );
   $conditions['commerce_registration_item_has_registration_capacity'] = array(
     'label' => t('Product is available for registration'),
     'group' => t('Commerce Registration'),
@@ -99,21 +78,6 @@ function commerce_registration_rules_action_info() {
     ),
   );
 
-  $actions['commerce_registration_delete_line_item'] = array(
-    'label' => t('Delete the line item'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Commerce Line Item'),
-        'description' => t('The Commerce Line Item to delete.'),
-      ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_delete_line_item',
-    ),
-  );
-
   return $actions;
 }
 
@@ -155,31 +119,13 @@ function commerce_registration_order_has_registration($line_item) {
 function commerce_registration_item_can_register($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $id = $line_item_wrapper->commerce_product->product_id->value();
-  return registration_has_room($id, 'commerce_product');
-}
-
-/**
- * Condition callback.
- *
- * Checks the commerce order to see if the line items have products that are in
- * the allowed products list.
- *
- * @param $order
- *   The Commerce Order whose line items will be reviewed.
- * @param $types
- *   Array of machine names of allowed product types.
- * @return
- *   Boolean FALSE if any product type is not in the allowed products list.
- */
-function commerce_registration_order_product_types_allowed($order, $types) {
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $type = $line_item_wrapper->commerce_product->type->value();
-    if (!in_array($type, $types)) {
-      return FALSE;
-    }
+  $settings = registration_entity_settings($id, 'commerce_product');
+  $room = (int) $settings['capacity'];
+  if ($room != 0) {
+    $room -= (int) registration_event_count($id, 'commerce_product');
   }
-  return TRUE;
+  $room = ($room > 0 ? TRUE : FALSE);
+  return (!empty($settings) && $settings['status'] == 1 && $room);
 }
 
 /**
@@ -210,7 +156,7 @@ function commerce_registration_mark_paid($order) {
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        entity_save('registration', $entity);
+        registration_save($entity);
       }
     }
   }
@@ -242,30 +188,5 @@ function commerce_registration_cancel_registrations($order) {
 }
 
 /**
- * Action callback.
- *
- * Removes the line item from the order.
- */
-function commerce_registration_delete_line_item($line_item) {
-  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  $order = commerce_order_load($line_item_wrapper->order_id->value());
-  // Delete the old line_item.
-  $order = commerce_cart_order_product_line_item_delete($order, $line_item->line_item_id);
-  commerce_order_save($order);
-}
-
-/**
  * @} End of "defgroup commerce_registration_rules_actions".
  */
-
-/**
- * Returns array of product types keyed by machine name.
- */
-function commerce_registration_product_types() {
-  $product_types = commerce_product_types();
-  $types = array();
-  foreach ($product_types as $key => $value) {
-    $types[$key] = $value['name'];
-  }
-  return $types;
-}
