@@ -120,12 +120,15 @@ function commerce_registration_item_can_register($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $id = $line_item_wrapper->commerce_product->product_id->value();
   $settings = registration_entity_settings($id, 'commerce_product');
+  if (empty($settings)) {
+    return FALSE;
+  }
   $room = (int) $settings['capacity'];
   if ($room != 0) {
     $room -= (int) registration_event_count($id, 'commerce_product');
   }
-  $room = ($room > 0 ? TRUE : FALSE);
-  return (!empty($settings) && $settings['status'] == 1 && $room);
+  $room = ($settings['capacity'] == 0 ? TRUE : ($room > 0 ? TRUE : FALSE));
+  return ($settings['status'] == 1 && $room);
 }
 
 /**
@@ -151,7 +154,7 @@ function commerce_registration_mark_paid($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    if (registration_has_room($id, 'commerce_product')) {
+    if (commerce_registration_item_can_register($line_item_wrapper->value()) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
@@ -174,7 +177,7 @@ function commerce_registration_cancel_registrations($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    if (registration_has_room($id, 'commerce_product')) {
+    if (commerce_registration_item_can_register($line_item_wrapper->value()) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {

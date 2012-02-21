@@ -28,23 +28,24 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
       $show_form = TRUE;
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
+      $prodkey = 'prod-' . $product->sku->value();
       if (!$find_values) {
         // order data has not been set, so we initialize an empty array for our
         // entities to be stored
-        $order->data['register_entities']['prod-' . $product->sku->value()] = array();
+        $order->data['register_entities'][$prodkey] = array();
       }
       for ($i=0; $i<$quantity; $i++) {
         $label = $i+1;
-        $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i] = array(
+        $form[$prodkey][$prodkey . '-reg-' . $i] = array(
           '#type' => 'fieldset',
           '#title' => check_plain($product->title->value() . ' - Registrant #' . $label),
           '#collapsible' => TRUE,
           '#tree' => TRUE,
         );
         $entity = NULL;
-        if ($find_values && !empty($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
+        if ($find_values && !empty($order->data['register_entities'][$prodkey][$i])) {
           // the entity exists already, so let's just load it from the order
-          $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+          $entity = $order->data['register_entities'][$prodkey][$i];
         }
         else {
           // entity doesn't exist, so we need to create a new registration
@@ -64,27 +65,42 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             $entity->mail = '';
           }
         }
-        $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]['mail'] = array(
+        $form[$prodkey][$prodkey . '-reg-' . $i]['mail'] = array(
           '#weight' => -50,
           '#type' => 'textfield',
           '#title' => t('Email Address'),
           '#default_value' => $entity->mail,
           '#required' => TRUE,
-          '#parents' => array('registration_information', 'prod-' . $product->sku->value(), 'prod-' . $product->sku->value() . '-reg-' . $i, 'email'),
+          '#parents' => array(
+            'registration_information',
+            $prodkey,
+            $prodkey . '-reg-' . $i,
+            'email'
+          ),
         );
         // attach the entity's fields to the form
-        field_attach_form('registration', $entity, $form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i], $form_state);
-        $fields = &$form['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i];
+        field_attach_form(
+          'registration',
+          $entity,
+          $form[$prodkey][$prodkey . '-reg-' . $i],
+          $form_state
+        );
+        $fields = &$form[$prodkey][$prodkey . '-reg-' . $i];
         foreach ($fields as $key => $data) {
           if (is_array($data) && substr($key, 0, 1) != '#') {
             // we set the parents on just fields so we can find them in
             // form_state later; fields in the form array don't start with a #
-            $fields[$key]['#parents'] = array('registration_information', 'prod-' . $product->sku->value(), 'prod-' . $product->sku->value() . '-reg-' . $i, $key);
+            $fields[$key]['#parents'] = array(
+              'registration_information',
+              $prodkey,
+              $prodkey . '-reg-' . $i,
+              $key
+            );
           }
         }
         // store entities in order's data array for use in validation, submission
         // and review callbacks
-        $order->data['register_entities']['prod-' . $product->sku->value()][$i] = $entity;
+        $order->data['register_entities'][$prodkey][$i] = $entity;
       }
     }
   }
@@ -123,12 +139,13 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $quantity = (int) $line_item_wrapper->quantity->value();
       $emails = array();
       for ($i=0; $i<$quantity; $i++) {
-        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        $mail = $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]['mail'];
+        $prodkey = 'prod-' . $product->sku->value();
+        $entity = $order->data['register_entities'][$prodkey][$i];
+        $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
         if (in_array($mail, $emails)) {
           form_set_error(
-            "registration_information][prod-" . $product->sku->value() .
-              "][prod-" . $product->sku->value() . "-reg-" . $i . "][mail",
+            "registration_information][" . $prodkey. "]["
+              . $prodkey . "-reg-" . $i . "][mail",
             t("Email addresses must be unique for each registrant."));
           $ret = FALSE;
         }
@@ -139,7 +156,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
         field_attach_form_validate(
           'registration',
           $entity,
-          $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i],
+          $form['registration_information'][$prodkey][$prodkey . '-reg-' . $i],
           $form_state
         );
       }
@@ -160,18 +177,19 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
-        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        $prodkey = 'prod-' . $product->sku->value();
+        $entity = $order->data['register_entities'][$prodkey][$i];
         field_attach_submit(
           'registration',
           $entity,
-          $form['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i],
+          $form['registration_information'][$prodkey][$prodkey . '-reg-' . $i],
           $form_state
         );
         commerce_registration_entity_update_fields(
           $entity,
-          $form_state['values']['registration_information']['prod-' . $product->sku->value()]['prod-' . $product->sku->value() . '-reg-' . $i]
+          $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]
         );
-        $order->data['register_entities']['prod-' . $product->sku->value()][$i] = $entity;
+        $order->data['register_entities'][$prodkey][$i] = $entity;
       }
     }
   }
@@ -189,10 +207,12 @@ function commerce_registration_information_review($form, $form_state, $checkout_
     if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      $msg .= '<em>' . $product->title->value() . ' (' . format_plural($quantity, '1 registration', '@count registrations') . '):</em><br />';
-      $msg .= t('');
+      $msg .= '<em>' . $product->title->value() . ' ('
+        . format_plural($quantity, '1 registration', '@count registrations')
+        . '):</em><br />';
       for ($i=0; $i<$quantity; $i++) {
-        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        $prodkey = 'prod-' . $product->sku->value();
+        $entity = $order->data['register_entities'][$prodkey][$i];
         $l = $i+1;
         $msg .= t("<hr><em><u>Registrant #@count</u></em><br />", array('@count' => $l));
         $msg .= t("<strong>Email</strong>: @email", array('@email' => $entity->mail)) . "<br />";
@@ -215,7 +235,8 @@ function commerce_registration_commerce_checkout_complete($order) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i=0; $i<$quantity; $i++) {
-        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        $prodkey = 'prod-' . $product->sku->value();
+        $entity = $order->data['register_entities'][$prodkey][$i];
         registration_save($entity);
       }
     }
