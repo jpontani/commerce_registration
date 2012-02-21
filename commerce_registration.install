@@ -31,3 +31,11 @@ function commerce_registration_install() {
     'default' => 0)
   );
 }
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_registration_uninstall() {
+  // Drop the order_id field from the registration table.
+  db_drop_field("registration", "order_id");
+}
