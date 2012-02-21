@@ -4,9 +4,9 @@ Commerce Registration
 Required Modules:
  - Drupal Commerce
  - Entity Registrations
+ - Rules
 
 Supported Modules:
- - Rules
  - Views
 
 Setup:
