@@ -14,9 +14,10 @@ class CommerceRegistrationHandlerFieldRegistrationEntity extends views_handler_f
   }
 
   /**
-   * Returns a link to the registration's Commerce Product..
+   * Returns a link to the registration's Commerce Product.
    *
    * @return string
+   *  The HTML link to the product.
    */
   function render($values) {
     $product = commerce_product_load($values->registration_entity_id);

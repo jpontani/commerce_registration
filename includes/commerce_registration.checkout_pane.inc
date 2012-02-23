@@ -87,7 +87,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         );
         $fields = &$form[$prodkey][$prodkey . '-reg-' . $i];
         foreach ($fields as $key => $data) {
-          if (is_array($data) && substr($key, 0, 1) != '#') {
+          if (is_array($data) && drupal_substr($key, 0, 1) != '#') {
             // We set the parents on just fields so we can find them in
             // form_state later; fields in the form array don't start with a #.
             $fields[$key]['#parents'] = array(
