@@ -35,3 +35,4 @@ Setup:
  When through with the order, the registration will be saved once the checkout
  is complete. You can now view registrations for the product by going to the
  product display node and clicking on the Registrations tab.
+ 

@@ -30,12 +30,12 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
       $quantity = (int) $line_item_wrapper->quantity->value();
       $prodkey = 'prod-' . $product->sku->value();
       if (!$find_values) {
-        // order data has not been set, so we initialize an empty array for our
-        // entities to be stored
+        // Order data has not been set, so we initialize an empty array for our
+        // entities to be stored.
         $order->data['register_entities'][$prodkey] = array();
       }
-      for ($i=0; $i<$quantity; $i++) {
-        $label = $i+1;
+      for ($i = 0; $i<$quantity; $i++) {
+        $label = $i + 1;
         $form[$prodkey][$prodkey . '-reg-' . $i] = array(
           '#type' => 'fieldset',
           '#title' => check_plain($product->title->value() . ' - Registrant #' . $label),
@@ -44,11 +44,11 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         );
         $entity = NULL;
         if ($find_values && !empty($order->data['register_entities'][$prodkey][$i])) {
-          // the entity exists already, so let's just load it from the order
+          // The entity exists already, so let's just load it from the order.
           $entity = $order->data['register_entities'][$prodkey][$i];
         }
         else {
-          // entity doesn't exist, so we need to create a new registration
+          // Entity doesn't exist, so we need to create a new registration.
           $bundle = registration_get_entity_registration_type('commerce_product', $line_item_wrapper->commerce_product->value());
           $entity = entity_get_controller('registration')->create(array('type' => $bundle));
           $entity->entity_type = 'commerce_product';
@@ -75,10 +75,10 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             'registration_information',
             $prodkey,
             $prodkey . '-reg-' . $i,
-            'email'
+            'email',
           ),
         );
-        // attach the entity's fields to the form
+        // Attach the entity's fields to the form.
         field_attach_form(
           'registration',
           $entity,
@@ -88,8 +88,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         $fields = &$form[$prodkey][$prodkey . '-reg-' . $i];
         foreach ($fields as $key => $data) {
           if (is_array($data) && substr($key, 0, 1) != '#') {
-            // we set the parents on just fields so we can find them in
-            // form_state later; fields in the form array don't start with a #
+            // We set the parents on just fields so we can find them in
+            // form_state later; fields in the form array don't start with a #.
             $fields[$key]['#parents'] = array(
               'registration_information',
               $prodkey,
@@ -98,20 +98,21 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             );
           }
         }
-        // store entities in order's data array for use in validation, submission
-        // and review callbacks
+        // Store entities in order's data array for use in validation,
+        // submission and review callbacks.
         $order->data['register_entities'][$prodkey][$i] = $entity;
       }
     }
   }
   if (!$show_form) {
-    // no register enabled products, so go to next step of checkout process
+    // No register enabled products, so go to next step of checkout process.
     $order_status = commerce_order_status_load($order->status);
     if ($order_status['state'] == 'checkout' && $order_status['checkout_page'] == 'registration') {
       $this_page = commerce_checkout_page_load($order_status['checkout_page']);
       $next_page = $this_page['next_page'];
       if ($order->log == "Customer returned to the previous checkout page via a submit button.") {
-        // not sure how else to check to see if they went back instead of forwards
+        // Not sure how else to check to see if they went back instead of
+        // forwards.
         $next_page = $this_page['prev_page'];
       }
       $order = commerce_order_status_update($order, 'checkout_' . $next_page);
@@ -138,13 +139,13 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $emails = array();
-      for ($i=0; $i<$quantity; $i++) {
+      for ($i = 0; $i<$quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
         if (in_array($mail, $emails)) {
           form_set_error(
-            "registration_information][" . $prodkey. "]["
+            "registration_information][" . $prodkey . "]["
               . $prodkey . "-reg-" . $i . "][mail",
             t("Email addresses must be unique for each registrant."));
           $ret = FALSE;
@@ -152,7 +153,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
         else {
           $emails[] = $mail;
         }
-        // let other modules do any validation necessary
+        // Let other modules do any validation necessary.
         field_attach_form_validate(
           'registration',
           $entity,
@@ -176,7 +177,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
     if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i=0; $i<$quantity; $i++) {
+      for ($i = 0; $i<$quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         field_attach_submit(
@@ -210,10 +211,10 @@ function commerce_registration_information_review($form, $form_state, $checkout_
       $msg .= '<em>' . $product->title->value() . ' ('
         . format_plural($quantity, '1 registration', '@count registrations')
         . '):</em><br />';
-      for ($i=0; $i<$quantity; $i++) {
+      for ($i = 0; $i<$quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
-        $l = $i+1;
+        $l = $i + 1;
         $msg .= t("<hr><em><u>Registrant #@count</u></em><br />", array('@count' => $l));
         $msg .= t("<strong>Email</strong>: @email", array('@email' => $entity->mail)) . "<br />";
         $msg .= drupal_render(field_attach_view('registration', $entity, 'full'));
@@ -234,7 +235,7 @@ function commerce_registration_commerce_checkout_complete($order) {
     if (!empty($settings) && (int) $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i=0; $i<$quantity; $i++) {
+      for ($i = 0; $i<$quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         registration_save($entity);
@@ -246,7 +247,7 @@ function commerce_registration_commerce_checkout_complete($order) {
 /**
  * Updates the attached entity with field values.
  *
- * @param $entity
+ * @param stdClass $entity
  *   The referenced entity to update.
  * @param array $values
  *   Array of values to add to the entity. Example value array:

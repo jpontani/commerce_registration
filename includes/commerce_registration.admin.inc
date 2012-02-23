@@ -8,9 +8,9 @@
  * Admin registration page.
  */
 function commerce_registration_admin_overview() {
-  $crumb[] = l('Home', '');
-  $crumb[] = l('Administration', 'admin');
-  $crumb[] = l('Store', 'admin/commerce');
+  $crumb[] = l(t('Home'), '');
+  $crumb[] = l(t('Administration'), 'admin');
+  $crumb[] = l(t('Store'), 'admin/commerce');
   drupal_set_breadcrumb($crumb);
   $view = views_get_view('commerce_registration_admin_regs', TRUE);
   $view->set_display('block');

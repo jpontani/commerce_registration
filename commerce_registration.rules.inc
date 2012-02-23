@@ -82,7 +82,7 @@ function commerce_registration_rules_action_info() {
 }
 
 /**
- * @defgroup commerce_registration_rules_conditions Commerce Registration Rules Conditions
+ * @defgroup commerce_registration_rules_conditions Rules Conditions
  * @{
  * Condition callbacks for Commerce Registration rules.
  */
@@ -92,9 +92,9 @@ function commerce_registration_rules_action_info() {
  *
  * Checks the commerce line item to see if the product is register enabled.
  *
- * @param $line_item
+ * @param CommerceLineItem $line_item
  *   The Commerce Line Item to check for a register enabled product.
- * @return
+ * @return bool
  *   Boolean TRUE if the line item product is register enabled.
  */
 function commerce_registration_order_has_registration($line_item) {
@@ -110,10 +110,10 @@ function commerce_registration_order_has_registration($line_item) {
  * Checks if the line item product has registration capacity left. Capacity is
  * only taken if an order is paid for in full.
  *
- * @param $line_item
+ * @param CommerceLineItem $line_item
  *   Commerce Line Item to check the product for registration capacity.
  *
- * @return
+ * @return bool
  *   Boolean TRUE if the product has registration capacity.
  */
 function commerce_registration_item_can_register($line_item) {
@@ -146,7 +146,7 @@ function commerce_registration_item_can_register($line_item) {
  *
  * Marks all registrations on a particular order as paid.
  *
- * @param $order
+ * @param CommerceOrder $order
  *   The Commerce Order object to mark all attached registrations as paid.
  * @todo Custom status definitions.
  */
@@ -157,7 +157,7 @@ function commerce_registration_mark_paid($order) {
     if (commerce_registration_item_can_register($line_item_wrapper->value()) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i=0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
         registration_save($entity);
       }
@@ -170,7 +170,7 @@ function commerce_registration_mark_paid($order) {
  *
  * Cancels all registrations on a particular order.
  *
- * @param $order
+ * @param CommerceOrder $order
  *   The Commerce Order object to cancel all attached registrations.
  */
 function commerce_registration_cancel_registrations($order) {
@@ -180,9 +180,9 @@ function commerce_registration_cancel_registrations($order) {
     if (commerce_registration_item_can_register($line_item_wrapper->value()) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i=0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        // notify field api that the entity was deleted
+        // Notify field api that the entity was deleted.
         field_attach_delete('registration', $entity);
         entity_delete('registration', $entity->registration_id);
       }

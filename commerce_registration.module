@@ -18,7 +18,7 @@ function commerce_registration_menu() {
     'page arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
   );
-  
+
   $menu['admin/commerce/registrations'] = array(
     'title' => 'Registrations',
     'description' => 'Manage product registrations that have been purchased.',
@@ -41,7 +41,7 @@ function commerce_registration_registration_page_access($node) {
     if (isset($node->{$field['field_name']})) {
       foreach ($node->{$field['field_name']} as $product) {
         $settings = registration_entity_settings($product[0]['product_id'], 'commerce_product');
-        if (!empty($settings) && user_access('view registration')){
+        if (!empty($settings) && user_access('view registration')) {
           return TRUE;
         }
       }
@@ -103,22 +103,8 @@ function commerce_registration_commerce_checkout_pane_info() {
 }
 
 /**
- * Implements hook_commerce_line_item_type_info().
+ * Implements hook_commerce_line_item_type_info_alter().
  */
-function commerce_registration_commerce_line_item_type_info_old() {
-  $items = array();
-  
-  $items['registration'] = array(
-    'type' => 'registration',
-    'name' => t('Registration'),
-    'product' => FALSE,
-    'description' => t('Contains the registration information for product enabled line items.'),
-    'base' => 'commerce_registration_lineitem',
-  );
-
-  return $items;
-}
-
 function commerce_registration_commerce_line_item_type_info_alter(&$line_item_types) {
   $line_item_types['product']['callbacks']['title'] = 'commerce_registration_product_title';
 }
@@ -129,9 +115,9 @@ function commerce_registration_commerce_line_item_type_info_alter(&$line_item_ty
  * We alter the title of the default line item to show available slots if the
  * product is register enabled.
  *
- * @param $line_item
+ * @param CommerceLineItem $line_item
  *
- * @return
+ * @return string
  *   Title of the line item product plus available slots, if applicable.
  */
 function commerce_registration_product_title($line_item) {
@@ -142,10 +128,10 @@ function commerce_registration_product_title($line_item) {
 /**
  * Returns a product title.
  *
- * @param $product
+ * @param CommerceProduct $product
  *   Fully formed Commerce Product object.
  *
- * @return
+ * @return string
  *   Product title with remaining capacity if available.
  */
 function commerce_registration_get_product_title($product) {
@@ -166,27 +152,6 @@ function commerce_registration_get_product_title($product) {
   else {
     return $product->title;
   }
-}
-
-/**
- * Registration line item configuration callback.
- */
-function commerce_registration_lineitem_configuration() {
-  
-}
-
-/**
- * Registration line item add form callback.
- */
-function commerce_registration_lineitem_add_form(&$form_state) {
-  
-}
-
-/**
- * Registration line item item add form submit callback.
- */
-function commerce_registration_lineitem_add_form_submit(&$line_item, $element, &$form_state, $form) {
-  
 }
 
 /**

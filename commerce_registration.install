@@ -4,7 +4,7 @@
  * Commerce Registration install file.
  *
  * Modify the registration schema to accomodate a commerce order ID number.
- * 
+ *
  */
 
 /**
