@@ -4,14 +4,22 @@
  * Commerce Registration attached entity views field handler.
  */
 
-class commerce_registration_handler_field_registration_entity extends views_handler_field {
+class CommerceRegistrationHandlerFieldRegistrationEntity extends views_handler_field {
+  /**
+   * Views handler constructor.
+   */
   function construct() {
     parent::construct();
-    $this->additional_fields['eid'] = 'eid';
+    $this->additional_fields['entity_id'] = 'entity_id';
   }
 
+  /**
+   * Returns a link to the registration's Commerce Product..
+   *
+   * @return string
+   */
   function render($values) {
-    $product = commerce_product_load($values->registration_eid);
+    $product = commerce_product_load($values->registration_entity_id);
     $uri = entity_uri('commerce_product', $product);
     $text = t('@product (@sku)', array('@product' => $product->title, '@sku' => $product->sku));
     return l($text, $uri['path']);

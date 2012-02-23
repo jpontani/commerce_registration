@@ -34,7 +34,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         // entities to be stored.
         $order->data['register_entities'][$prodkey] = array();
       }
-      for ($i = 0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $label = $i + 1;
         $form[$prodkey][$prodkey . '-reg-' . $i] = array(
           '#type' => 'fieldset',
@@ -94,7 +94,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
               'registration_information',
               $prodkey,
               $prodkey . '-reg-' . $i,
-              $key
+              $key,
             );
           }
         }
@@ -139,7 +139,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $emails = array();
-      for ($i = 0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
@@ -177,7 +177,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
     if (!empty($settings) && $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i = 0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         field_attach_submit(
@@ -211,7 +211,7 @@ function commerce_registration_information_review($form, $form_state, $checkout_
       $msg .= '<em>' . $product->title->value() . ' ('
         . format_plural($quantity, '1 registration', '@count registrations')
         . '):</em><br />';
-      for ($i = 0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         $l = $i + 1;
@@ -235,7 +235,7 @@ function commerce_registration_commerce_checkout_complete($order) {
     if (!empty($settings) && (int) $settings['status'] == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i = 0; $i<$quantity; $i++) {
+      for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         registration_save($entity);

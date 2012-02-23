@@ -116,6 +116,7 @@ function commerce_registration_commerce_line_item_type_info_alter(&$line_item_ty
  * product is register enabled.
  *
  * @param CommerceLineItem $line_item
+ *   The line item to get the title for.
  *
  * @return string
  *   Title of the line item product plus available slots, if applicable.
@@ -199,8 +200,8 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         break;
     }
   }
-  else if (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
-    // Add settings to Commerce Product Add/Edit Form
+  elseif (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
+    // Add settings to Commerce Product Add/Edit Form.
     $product = $form_state['commerce_product'];
     if (!function_exists("registration_registrations_settings_form")) {
       module_load_include("inc", "registration", "/includes/registration.forms");

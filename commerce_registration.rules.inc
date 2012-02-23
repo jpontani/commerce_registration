@@ -94,6 +94,7 @@ function commerce_registration_rules_action_info() {
  *
  * @param CommerceLineItem $line_item
  *   The Commerce Line Item to check for a register enabled product.
+ *
  * @return bool
  *   Boolean TRUE if the line item product is register enabled.
  */
@@ -136,7 +137,7 @@ function commerce_registration_item_can_register($line_item) {
  */
 
 /**
- * @defgroup commerce_registration_rules_actions Commerce Registration Rules Actions
+ * @defgroup commerce_registration_rules_actions Rules Actions
  * @{
  * Action callbacks for Commerce Registration rules.
  */
@@ -148,6 +149,7 @@ function commerce_registration_item_can_register($line_item) {
  *
  * @param CommerceOrder $order
  *   The Commerce Order object to mark all attached registrations as paid.
+ *
  * @todo Custom status definitions.
  */
 function commerce_registration_mark_paid($order) {

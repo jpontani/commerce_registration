@@ -1,7 +1,14 @@
 <?php
+/**
+ * @file
+ * Commerce Registration default views.
+ */
 
+/**
+ * Implements hook_views_default_views().
+ */
 function commerce_registration_views_default_views() {
-  $view = new view;
+  $view = new view();
   $view->name = 'commerce_registration_admin_regs';
   $view->description = '';
   $view->tag = 'default';
@@ -377,9 +384,9 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['filters']['status']['value'] = 'confirm';
 
   /* Display: Block */
-  $handler = $view->new_display('block', 'Block', 'block');  
+  $handler = $view->new_display('block', 'Block', 'block');
 
   $views['commerce_registration_admin_registrations'] = $view;
-  
+
   return $views;
 }
