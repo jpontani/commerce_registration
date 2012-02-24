@@ -156,7 +156,7 @@ function commerce_registration_mark_paid($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    if (commerce_registration_item_can_register($line_item_wrapper->value()) {
+    if (commerce_registration_item_can_register($line_item_wrapper->value())) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
@@ -179,7 +179,7 @@ function commerce_registration_cancel_registrations($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    if (commerce_registration_item_can_register($line_item_wrapper->value()) {
+    if (commerce_registration_item_can_register($line_item_wrapper->value())) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
