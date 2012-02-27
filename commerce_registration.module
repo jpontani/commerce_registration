@@ -180,7 +180,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           unset($form['submit']);
           $capacity = $settings['capacity'];
           $avail = $capacity - registration_event_count($product->product_id, 'commerce_product');
-		  $availtext = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : t('No slots available'));
+          $availtext = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : t('No slots available'));
           $capacity = ($settings['capacity'] == 0 ? t("Unlimited slots available") : $availtext);
           $form['capacity'] = array(
             '#type' => 'markup',

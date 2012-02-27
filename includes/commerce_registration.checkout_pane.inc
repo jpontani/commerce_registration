@@ -247,10 +247,7 @@ function commerce_registration_commerce_checkout_complete($order) {
 /**
  * Updates the attached entity with field values.
  *
- * @param stdClass $entity
- *   The referenced entity to update.
- * @param array $values
- *   Array of values to add to the entity. Example value array:
+ * Example $values array:
  * @code
  * $values = array(
  *   'field_passport' => array(
@@ -260,6 +257,11 @@ function commerce_registration_commerce_checkout_complete($order) {
  *   )
  * );
  * @endcode
+ *
+ * @param stdClass $entity
+ *   The referenced entity to update.
+ * @param array $values
+ *   Array of values to add to the entity.
  */
 function commerce_registration_entity_update_fields(&$entity, $values) {
   if (empty($values)) {
