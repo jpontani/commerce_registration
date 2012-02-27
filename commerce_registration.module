@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   Commerce Registration module code.
+ * Commerce Registration module code.
  */
 
 /**
@@ -141,8 +141,8 @@ function commerce_registration_get_product_title($product) {
     $avail = (int) $settings['capacity'];
     $filled = (int) registration_event_count($product->product_id, 'commerce_product');
     $avail2 = abs($avail - $filled);
-    $capacity = ($avail == 0 ? t("Unlimited slots available") :
-      ($avail2 != 0 ? format_plural($avail2, '1 slot available', '@count slots available') : 'No slots available'));
+    $availtext = ($avail2 != 0 ? format_plural($avail2, '1 slot available', '@count slots available') : 'No slots available');
+    $capacity = ($avail == 0 ? t("Unlimited slots available") : $availtext);
     return t('@title (@capacity)',
       array(
         '@title' => $product->title,
@@ -150,9 +150,7 @@ function commerce_registration_get_product_title($product) {
       )
     );
   }
-  else {
-    return $product->title;
-  }
+  return $product->title;
 }
 
 /**
@@ -173,6 +171,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           $form['product_id']['#options'][$product_id] = $title;
         }
         break;
+
       case "hidden":
         $product = commerce_product_load($form['product_id']['#value']);
         $settings = registration_entity_settings($product->product_id, 'commerce_product');
@@ -181,8 +180,8 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           unset($form['submit']);
           $capacity = $settings['capacity'];
           $avail = $capacity - registration_event_count($product->product_id, 'commerce_product');
-          $capacity = ($settings['capacity'] == 0 ? t("Unlimited slots available") :
-            ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : t('No slots available')));
+		  $availtext = ($avail != 0 ? format_plural($avail, '1 slot available', '@count slots available') : t('No slots available'));
+          $capacity = ($settings['capacity'] == 0 ? t("Unlimited slots available") : $availtext);
           $form['capacity'] = array(
             '#type' => 'markup',
             '#markup' => '<em>' . $capacity . '</em>',
@@ -193,11 +192,12 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           else {
             $form['not_available'] = array(
               '#type' => 'markup',
-              '#markup' => t('<p><strong>This item is currently unavailable.</strong></p>'),
+              '#markup' => '<p><strong>' . t('This item is currently unavailable.') . '</strong></p>',
             );
           }
         }
         break;
+
     }
   }
   elseif (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {

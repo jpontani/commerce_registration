@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   Default rules configuration.
+ * Default rules configuration.
  */
 
 /**

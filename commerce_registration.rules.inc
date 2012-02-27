@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   Commerce Registration rules file.
+ * Commerce Registration rules file.
  */
 
 /**
@@ -19,9 +19,6 @@ function commerce_registration_rules_condition_info() {
         'label' => t('Commerce Line Item'),
         'description' => t('The Commerce Line Item that should be checked for a register enabled product.'),
       ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_order_has_registration',
     ),
   );
   $conditions['commerce_registration_item_has_registration_capacity'] = array(
@@ -72,9 +69,6 @@ function commerce_registration_rules_action_info() {
         'label' => t('Commerce Order'),
         'description' => t('The Commerce Order to cancel all attached registrations'),
       ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_cancel_registrations',
     ),
   );
 

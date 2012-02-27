@@ -1,6 +1,7 @@
 <?php
 /**
  * @file
+ * Add token for Commerce Order to Registrations.
  */
 
 /**

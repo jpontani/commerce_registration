@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   Views integration functions.
+ * Views integration functions.
  */
 
 /**

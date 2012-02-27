@@ -251,13 +251,15 @@ function commerce_registration_commerce_checkout_complete($order) {
  *   The referenced entity to update.
  * @param array $values
  *   Array of values to add to the entity. Example value array:
- *     array(
- *       'field_passport' => array(
- *         'und' => array(
- *           0 => array('value' => 'MY FIELD VALUE')
- *         )
- *       )
+ * @code
+ * $values = array(
+ *   'field_passport' => array(
+ *     'und' => array(
+ *       0 => array('value' => 'MY FIELD VALUE')
  *     )
+ *   )
+ * );
+ * @endcode
  */
 function commerce_registration_entity_update_fields(&$entity, $values) {
   if (empty($values)) {
