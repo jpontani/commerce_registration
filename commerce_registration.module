@@ -259,6 +259,25 @@ function commerce_registration_views_api() {
 }
 
 /**
+ * Implements hook_field_extra_fields().
+ */
+function commerce_registration_field_extra_fields() {
+  $items = array();
+  // Add registration availability display option to each commerce product type.
+  foreach (field_info_instances('commerce_product') as $product_bundle_name => $product_fields) {
+    foreach ($product_fields as $product_field_name => $product_field) {
+      if ($product_field['widget']['module'] == 'registration') {
+        $items['commerce_product'][$product_bundle_name]['display']['registration_available'] = array(
+          'label' => t('Registration Availability'),
+          'description' => t('The Registration availability text next to the product.'),
+          'weight' => -1,
+        );
+      }
+    }
+  }
+  return $items;
+}
+/**
  * Implements hook_field_extra_fields_alter().
  */
 function commerce_registration_field_extra_fields_alter(&$info) {
