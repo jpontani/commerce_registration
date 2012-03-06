@@ -17,10 +17,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   if (empty($form)) {
     $form = array();
   }
-  $find_values = !empty($order->data['register_entities']);
-  if (!$find_values) {
-    $order->data['register_entities'] = array();
-  }
+  $find_values = isset($form_state['values'][$checkout_pane['pane_id']]['register_entities']);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
     $settings = registration_entity_settings($id, 'commerce_product');
@@ -29,11 +26,6 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $prodkey = 'prod-' . $product->sku->value();
-      if (!$find_values) {
-        // Order data has not been set, so we initialize an empty array for our
-        // entities to be stored.
-        $order->data['register_entities'][$prodkey] = array();
-      }
       for ($i = 0; $i < $quantity; $i++) {
         $label = $i + 1;
         $form[$prodkey][$prodkey . '-reg-' . $i] = array(
@@ -43,13 +35,14 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           '#tree' => TRUE,
         );
         $entity = NULL;
-        if ($find_values && !empty($order->data['register_entities'][$prodkey][$i])) {
-          // The entity exists already, so let's just load it from the order.
-          $entity = $order->data['register_entities'][$prodkey][$i];
+        if ($find_values) {
+          // The entity exists already, so let's just load it from the form_state.
+          $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         }
         else {
           // Entity doesn't exist, so we need to create a new registration.
-          $bundle = registration_get_entity_registration_type('commerce_product', $line_item_wrapper->commerce_product->value());
+          $bundle = registration_get_entity_registration_type('commerce_product',
+                      $line_item_wrapper->commerce_product->value());
           $entity = entity_get_controller('registration')->create(array('type' => $bundle));
           $entity->entity_type = 'commerce_product';
           $entity->entity_id = $product->product_id->value();
@@ -98,9 +91,10 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             );
           }
         }
-        // Store entities in order's data array for use in validation,
-        // submission and review callbacks.
-        $order->data['register_entities'][$prodkey][$i] = $entity;
+        $form['register_entities'][$prodkey][$i] = array(
+          '#type' => 'value',
+          '#value' => $entity,
+        );
       }
     }
   }
@@ -141,7 +135,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $emails = array();
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
-        $entity = $order->data['register_entities'][$prodkey][$i];
+        $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
         if (in_array($mail, $emails)) {
           form_set_error(
@@ -170,6 +164,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
  * Commerce checkout pane form submit callback.
  */
 function commerce_registration_information_checkout_form_submit($form, &$form_state, $checkout_pane, $order) {
+  $order->data['register_entities'] = array();
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
@@ -179,7 +174,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
-        $entity = $order->data['register_entities'][$prodkey][$i];
+        $entity = &$form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         field_attach_submit(
           'registration',
           $entity,
@@ -194,6 +189,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       }
     }
   }
+  commerce_order_save($order);
 }
 
 /**
@@ -222,26 +218,6 @@ function commerce_registration_information_review($form, $form_state, $checkout_
     }
   }
   return $msg;
-}
-
-/**
- * Implements hook_commerce_checkout_complete().
- */
-function commerce_registration_commerce_checkout_complete($order) {
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    $settings = registration_entity_settings($id, 'commerce_product');
-    if (!empty($settings) && (int) $settings['status'] == 1) {
-      $product = $line_item_wrapper->commerce_product;
-      $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i = 0; $i < $quantity; $i++) {
-        $prodkey = 'prod-' . $product->sku->value();
-        $entity = $order->data['register_entities'][$prodkey][$i];
-        registration_save($entity);
-      }
-    }
-  }
 }
 
 /**
