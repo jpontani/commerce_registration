@@ -10,7 +10,6 @@ class CommerceRegistrationHandlerFieldRegistrationEntity extends views_handler_f
    */
   function construct() {
     parent::construct();
-    $this->additional_fields['entity_id'] = 'entity_id';
   }
 
   /**

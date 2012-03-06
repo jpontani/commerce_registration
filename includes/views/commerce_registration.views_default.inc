@@ -160,27 +160,6 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['registration_id']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['registration_id']['separator'] = '';
   $handler->display->display_options['fields']['registration_id']['format_plural'] = 0;
-  /* Field: Registration: Status */
-  $handler->display->display_options['fields']['status_1']['id'] = 'status_1';
-  $handler->display->display_options['fields']['status_1']['table'] = 'registration';
-  $handler->display->display_options['fields']['status_1']['field'] = 'status';
-  $handler->display->display_options['fields']['status_1']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['make_link'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['absolute'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['external'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['replace_spaces'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['trim_whitespace'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['nl2br'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['status_1']['alter']['ellipsis'] = 1;
-  $handler->display->display_options['fields']['status_1']['alter']['strip_tags'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['status_1']['alter']['html'] = 0;
-  $handler->display->display_options['fields']['status_1']['element_label_colon'] = 1;
-  $handler->display->display_options['fields']['status_1']['element_default_classes'] = 1;
-  $handler->display->display_options['fields']['status_1']['hide_empty'] = 0;
-  $handler->display->display_options['fields']['status_1']['empty_zero'] = 0;
-  $handler->display->display_options['fields']['status_1']['hide_alter_empty'] = 1;
   /* Field: Registration: Registration Email */
   $handler->display->display_options['fields']['mail']['id'] = 'mail';
   $handler->display->display_options['fields']['mail']['table'] = 'registration';
