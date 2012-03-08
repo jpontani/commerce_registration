@@ -137,15 +137,25 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
-        if (in_array($mail, $emails)) {
+        if (registration_is_registered($entity, $mail)) {
           form_set_error(
             "registration_information][" . $prodkey . "]["
-              . $prodkey . "-reg-" . $i . "][mail",
-            t("Email addresses must be unique for each registrant."));
+                . $prodkey . "-reg-" . $i . "][mail",
+              t("The email address entered is already registered for this item.")
+          );
           $ret = FALSE;
         }
         else {
-          $emails[] = $mail;
+          if (in_array($mail, $emails)) {
+            form_set_error(
+              "registration_information][" . $prodkey . "]["
+                . $prodkey . "-reg-" . $i . "][mail",
+              t("Email addresses must be unique for each registrant."));
+            $ret = FALSE;
+          }
+          else {
+            $emails[] = $mail;
+          }
         }
         // Let other modules do any validation necessary.
         field_attach_form_validate(
