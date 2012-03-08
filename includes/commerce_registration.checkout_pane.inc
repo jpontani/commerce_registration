@@ -185,6 +185,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = &$form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
+        registration_save($entity);
         field_attach_submit(
           'registration',
           $entity,
@@ -207,6 +208,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
  */
 function commerce_registration_information_review($form, $form_state, $checkout_pane, $order) {
   $msg = '';
+  dsm($order);
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
