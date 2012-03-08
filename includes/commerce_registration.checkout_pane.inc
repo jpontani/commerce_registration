@@ -18,6 +18,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
     $form = array();
   }
   $find_values = isset($form_state['values'][$checkout_pane['pane_id']]['register_entities']);
+  $order_values = isset($order->data['register_entities']);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
     $settings = registration_entity_settings($id, 'commerce_product');
@@ -35,15 +36,26 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           '#tree' => TRUE,
         );
         $entity = NULL;
+        $mail = '';
+        if ($user->uid != 0) {
+          $mail = $user->mail;
+        }
+        if (isset($form_state['values'][$checkout_pane['pane_id']]['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'])) {
+          $mail = $form_state['values'][$checkout_pane['pane_id']]['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
+        }
         if ($find_values) {
           // The entity exists already, so let's just load it from the form_state.
           $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
+        }
+        elseif ($order_values) {
+          $entity = $order->data['register_entities'][$prodkey][$i];
         }
         else {
           // Entity doesn't exist, so we need to create a new registration.
           $bundle = registration_get_entity_registration_type('commerce_product',
                       $line_item_wrapper->commerce_product->value());
           $entity = entity_get_controller('registration')->create(array('type' => $bundle));
+          $entity->registration_id = 0;
           $entity->entity_type = 'commerce_product';
           $entity->entity_id = $product->product_id->value();
           $entity->entity = entity_load_single($entity->entity_type, $entity->entity_id);
@@ -51,12 +63,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->updated = REQUEST_TIME;
           $entity->author_uid = $user->uid;
           $entity->order_id = $order->order_id;
-          if ($user->uid != 0) {
-            $entity->mail = $user->mail;
-          }
-          else {
-            $entity->mail = '';
-          }
+          $entity->mail = $mail;
         }
         $form[$prodkey][$prodkey . '-reg-' . $i]['mail'] = array(
           '#weight' => -50,
@@ -185,7 +192,6 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = &$form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
-        registration_save($entity);
         field_attach_submit(
           'registration',
           $entity,
