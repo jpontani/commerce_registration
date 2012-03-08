@@ -221,8 +221,8 @@ function commerce_registration_information_review($form, $form_state, $checkout_
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $order->data['register_entities'][$prodkey][$i];
         $l = $i + 1;
-        $msg .= t("<hr><em><u>Registrant #@count</u></em><br />", array('@count' => $l));
-        $msg .= t("<strong>Email</strong>: @email", array('@email' => $entity->mail)) . "<br />";
+        $msg .= "<hr><em><u>" . t("Registrant #@count", array('@count' => $l)) . "</u></em><br />";
+        $msg .= "<strong>" . t("Email") . "</strong>:" . check_plain($entity->mail) . "<br />";
         $msg .= drupal_render(field_attach_view('registration', $entity, 'full'));
       }
     }
