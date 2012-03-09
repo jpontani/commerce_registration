@@ -10,15 +10,6 @@
 function commerce_registration_menu() {
   $menu = array();
 
-  $menu['node/%node/registration'] = array(
-    'title' => 'Registrations',
-    'access callback' => 'commerce_registration_registration_page_access',
-    'access arguments' => array(1),
-    'page callback' => 'commerce_registration_registration_page',
-    'page arguments' => array(1),
-    'type' => MENU_LOCAL_TASK,
-  );
-
   $menu['admin/commerce/registrations'] = array(
     'title' => 'Registrations',
     'description' => 'Manage product registrations that have been purchased.',
@@ -31,29 +22,88 @@ function commerce_registration_menu() {
 }
 
 /**
- * Page access callback to view all registrations for a given product display.
- * @todo Registration function to check if a given entity is register
- *   enabled.
+ * Implements hook_menu_alter().
  */
-function commerce_registration_registration_page_access($node) {
+function commerce_registration_menu_alter(&$menu) {
+  foreach (commerce_info_fields('commerce_product_reference') as $field_name => $field) {
+    foreach ($field['bundles'] as $type => $bundles) {
+      if ($type == "commerce_line_item" || $type == "commerce_product") {
+        continue;
+      }
+      $menu[$type . '/%entity_object/registrations'] = array(
+        'load arguments' => array($type),
+        'title' => 'Manage Registrations',
+        'page callback' => 'commerce_registration_registration_page',
+        'page arguments' => array(0, 1),
+        'access callback' => 'commerce_registration_administer_registrations_access',
+        'access arguments' => array(0, 1),
+        'type' => MENU_LOCAL_TASK,
+      );
+      $menu[$type . '/%entity_object/registrations/list'] = array(
+        'load arguments' => array($type),
+        'title' => 'Registrations',
+        'page callback' => 'commerce_registration_registration_page',
+        'page arguments' => array(0, 1),
+        'access callback' => 'commerce_registration_administer_registrations_access',
+        'access arguments' => array(0, 1),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+      );
+      $menu[$type . '/%entity_object/registrations/settings'] = array(
+        'load arguments' => array($type),
+        'title' => 'Settings',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('commerce_registration_node_registrations_settings_form', 0, 1),
+        'access callback' => 'commerce_registration_administer_registrations_access',
+        'access arguments' => array(0, 1),
+        'file path' => drupal_get_path('module', 'commerce_registration'),
+        'file' => 'includes/commerce_registration.forms.inc',
+        'weight' => 9,
+        'type' => MENU_LOCAL_TASK,
+      );
+      $menu[$type . '/%entity_object/registrations/broadcast'] = array(
+        'load arguments' => array($type),
+        'title' => 'Email Registrants',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('commerce_registration_registrations_broadcast_form', 0, 1),
+        'access callback' => 'commerce_registration_administer_registrations_access',
+        'access arguments' => array(0, 1),
+        'file path' => drupal_get_path('module', 'commerce_registration'),
+        'file' => 'includes/commerce_registration.forms.inc',
+        'weight' => 10,
+        'type' => MENU_LOCAL_TASK,
+      );
+    }
+  }
+}
+
+/**
+ * Access callback for modifying settings and sending emails for a given
+ * product display.
+ */
+function commerce_registration_administer_registrations_access($type, $node) {
+  // Loop through each product on the node, and if it contains a registration
+  // type and the suer can administer them, then we allow it.
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
   foreach ($fields as $field) {
     if (isset($node->{$field['field_name']})) {
       foreach ($node->{$field['field_name']} as $product) {
-        $settings = registration_entity_settings($product[0]['product_id'], 'commerce_product');
-        if (!empty($settings) && user_access('view registration')) {
-          return TRUE;
+        $product = commerce_product_load($product[0]['product_id']);
+        if (registration_get_entity_registration_type('commerce_product', $product)) {
+          if (user_access('administer registration')) {
+            return TRUE;
+          }
         }
       }
     }
   }
-  return FALSE;
+  return registration_administer_registrations_access($type, $node);
 }
 
 /**
  * Registration page callback for all registrations for a given product display.
  */
-function commerce_registration_registration_page($node) {
+function commerce_registration_registration_page($type, $node) {
+  $out = "";
   $prodids = array();
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
   foreach ($fields as $field) {
@@ -63,10 +113,14 @@ function commerce_registration_registration_page($node) {
       }
     }
   }
-  $out = "";
-  foreach ($prodids as $product_id) {
-    $prod = commerce_product_load($product_id);
-    $out .= registration_registrations_page('commerce_product', $prod);
+  if (!empty($prodids)) {
+    foreach ($prodids as $product_id) {
+      $prod = commerce_product_load($product_id);
+      $out .= registration_registrations_page('commerce_product', $prod);
+    }
+  }
+  else {
+    $out = registration_registrations_page($type, $node);
   }
   return $out;
 }
@@ -123,7 +177,11 @@ function commerce_registration_commerce_line_item_type_info_alter(&$line_item_ty
  */
 function commerce_registration_product_title($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-  return commerce_registration_get_product_title($line_item_wrapper->commerce_product->value());
+  $fieldsettings = field_extra_fields_get_display('commerce_product', $line_item_wrapper->commerce_product->value()->type, 'line_item');
+  $showavail = isset($fieldsettings['registration_available'])
+    && isset($fieldsettings['registration_available']['visible'])
+    && $fieldsettings['registration_available']['visible'];
+  return commerce_registration_get_product_title($line_item_wrapper->commerce_product->value(), $showavail);
 }
 
 /**
@@ -135,9 +193,9 @@ function commerce_registration_product_title($line_item) {
  * @return string
  *   Product title with remaining capacity if available.
  */
-function commerce_registration_get_product_title($product) {
+function commerce_registration_get_product_title($product, $showavail = TRUE) {
   $settings = registration_entity_settings($product->product_id, 'commerce_product');
-  if (!empty($settings) && $settings['status'] == 1) {
+  if (!empty($settings) && $settings['status'] == 1 && $showavail) {
     $capacity = (int) $settings['capacity'];
     $filled = (int) registration_event_count($product->product_id, 'commerce_product');
     $avail = $capacity - $filled;
@@ -167,32 +225,46 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         $products = $form['product_id']['#options'];
         foreach ($products as $product_id => $title) {
           $product = commerce_product_load($product_id);
-          $title = commerce_registration_get_product_title($product);
+          $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
+          $showavail = isset($fieldsettings['registration_available'])
+            && isset($fieldsettings['registration_available']['visible'])
+            && $fieldsettings['registration_available']['visible'];
+          $title = ($showavail ? commerce_registration_get_product_title($product, $showavail) : $product->title);
           $form['product_id']['#options'][$product_id] = $title;
         }
         break;
 
       case "hidden":
         $product = commerce_product_load($form['product_id']['#value']);
+        $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
+        $showavail = isset($fieldsettings['registration_available'])
+          && isset($fieldsettings['registration_available']['visible'])
+          && $fieldsettings['registration_available']['visible'];
         $settings = registration_entity_settings($product->product_id, 'commerce_product');
         if (!empty($settings) && $settings['status'] == 1) {
           $submit = $form['submit'];
           unset($form['submit']);
           $capacity = (int) $settings['capacity'];
           $avail = $capacity - registration_event_count($product->product_id, 'commerce_product');
-          $availtext = ($avail > 0 ? format_plural($avail, '1 slot available', '@count slots available') : t('No slots available'));
+          $availtext = ($avail > 0 ?
+            format_plural($avail, '1 slot available', '@count slots available')
+            : t('No slots available'));
           $capacity = ($settings['capacity'] == 0 ? t("Unlimited slots available") : $availtext);
           $form['capacity'] = array(
             '#type' => 'markup',
             '#markup' => '<em>' . $capacity . '</em>',
           );
+          if (!$showavail) {
+            unset($form['capacity']);
+          }
           if (registration_has_room($product->product_id, 'commerce_product')) {
             $form['submit'] = $submit;
           }
           else {
             $form['not_available'] = array(
               '#type' => 'markup',
-              '#markup' => '<p><strong>' . t('This item is currently unavailable.') . '</strong></p>',
+              '#markup' => '<p><strong>' . t('This item is currently unavailable.')
+                . '</strong></p>',
             );
           }
         }
@@ -327,9 +399,11 @@ function commerce_registration_field_extra_fields_alter(&$info) {
 function commerce_registration_commerce_checkout_complete($order) {
   if (isset($order->data['register_entities'])) {
     foreach ($order->data['register_entities'] as $product => $entities) {
-      foreach ($entities as $entity) {
+      foreach ($entities as $key => $entity) {
         registration_save($entity);
+        $order->data['register_entities'][$product][$key] = $entity;
       }
     }
+    commerce_order_save($order);
   }
 }
