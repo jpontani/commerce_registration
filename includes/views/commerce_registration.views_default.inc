@@ -60,7 +60,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['relationships']['order_id']['id'] = 'order_id';
   $handler->display->display_options['relationships']['order_id']['table'] = 'registration';
   $handler->display->display_options['relationships']['order_id']['field'] = 'order_id';
-  $handler->display->display_options['relationships']['order_id']['required'] = 0;
+  $handler->display->display_options['relationships']['order_id']['required'] = 1;
   if (module_exists('views_bulk_operations')) {
     /* Field: Registration: Bulk operations */
     $handler->display->display_options['fields']['views_bulk_operations']['id'] = 'views_bulk_operations';
@@ -136,7 +136,7 @@ function commerce_registration_views_default_views() {
     $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 0;
     $handler->display->display_options['fields']['views_bulk_operations']['vbo']['force_single'] = 0;
   }
-  /* Field: Registration: Registration ID Number */
+  /* Field: Registration: Registration ID */
   $handler->display->display_options['fields']['registration_id']['id'] = 'registration_id';
   $handler->display->display_options['fields']['registration_id']['table'] = 'registration';
   $handler->display->display_options['fields']['registration_id']['field'] = 'registration_id';
@@ -160,7 +160,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['registration_id']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['registration_id']['separator'] = '';
   $handler->display->display_options['fields']['registration_id']['format_plural'] = 0;
-  /* Field: Registration: Registration Email */
+  /* Field: Registration: Mail */
   $handler->display->display_options['fields']['mail']['id'] = 'mail';
   $handler->display->display_options['fields']['mail']['table'] = 'registration';
   $handler->display->display_options['fields']['mail']['field'] = 'mail';
@@ -182,7 +182,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['mail']['hide_empty'] = 0;
   $handler->display->display_options['fields']['mail']['empty_zero'] = 0;
   $handler->display->display_options['fields']['mail']['hide_alter_empty'] = 1;
-  /* Field: Registration: Created Date Timestamp */
+  /* Field: Registration: Created */
   $handler->display->display_options['fields']['created']['id'] = 'created';
   $handler->display->display_options['fields']['created']['table'] = 'registration';
   $handler->display->display_options['fields']['created']['field'] = 'created';
@@ -205,7 +205,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['created']['empty_zero'] = 0;
   $handler->display->display_options['fields']['created']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['created']['date_format'] = 'long';
-  /* Field: Registration: Attached Entity Type */
+  /* Field: Registration: Entity_type */
   $handler->display->display_options['fields']['entity_type']['id'] = 'entity_type';
   $handler->display->display_options['fields']['entity_type']['table'] = 'registration';
   $handler->display->display_options['fields']['entity_type']['field'] = 'entity_type';
@@ -228,10 +228,10 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['entity_type']['hide_empty'] = 0;
   $handler->display->display_options['fields']['entity_type']['empty_zero'] = 0;
   $handler->display->display_options['fields']['entity_type']['hide_alter_empty'] = 1;
-  /* Field: Registration: Attached Entity ID */
+  /* Field: Registration: Entity_id */
   $handler->display->display_options['fields']['entity_id']['id'] = 'entity_id';
   $handler->display->display_options['fields']['entity_id']['table'] = 'registration';
-  $handler->display->display_options['fields']['entity_id']['field'] = 'eid';
+  $handler->display->display_options['fields']['entity_id']['field'] = 'entity_id';
   $handler->display->display_options['fields']['entity_id']['label'] = '';
   $handler->display->display_options['fields']['entity_id']['exclude'] = TRUE;
   $handler->display->display_options['fields']['entity_id']['alter']['alter_text'] = 0;
@@ -351,19 +351,25 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['status']['hide_empty'] = 0;
   $handler->display->display_options['fields']['status']['empty_zero'] = 0;
   $handler->display->display_options['fields']['status']['hide_alter_empty'] = 1;
-  /* Sort criterion: Registration: Created Date Timestamp */
+  /* Sort criterion: Registration: Created */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'registration';
   $handler->display->display_options['sorts']['created']['field'] = 'created';
   $handler->display->display_options['sorts']['created']['order'] = 'DESC';
-  /* Filter criterion: Registration: Status */
-  $handler->display->display_options['filters']['status']['id'] = 'status';
-  $handler->display->display_options['filters']['status']['table'] = 'registration';
-  $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['value'] = 'confirm';
 
-  /* Display: Block */
-  $handler = $view->new_display('block', 'Block', 'block');
+  /* Display: Completed Registrations with Order ID */
+  $handler = $view->new_display('block', 'Completed Registrations with Order ID', 'commerce_regs_w_order');
+
+  /* Display: All Registrations */
+  $handler = $view->new_display('block', 'All Registrations', 'commerce_regs_all');
+  $handler->display->display_options['defaults']['title'] = FALSE;
+  $handler->display->display_options['title'] = 'All Registrations';
+  $handler->display->display_options['defaults']['relationships'] = FALSE;
+  /* Relationship: Registration: Commerce Order ID */
+  $handler->display->display_options['relationships']['order_id']['id'] = 'order_id';
+  $handler->display->display_options['relationships']['order_id']['table'] = 'registration';
+  $handler->display->display_options['relationships']['order_id']['field'] = 'order_id';
+  $handler->display->display_options['relationships']['order_id']['required'] = 0;
 
   $views['commerce_registration_admin_registrations'] = $view;
 

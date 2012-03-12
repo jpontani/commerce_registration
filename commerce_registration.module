@@ -17,6 +17,24 @@ function commerce_registration_menu() {
     'page callback' => 'commerce_registration_admin_overview',
     'file' => 'includes/commerce_registration.admin.inc',
   );
+  $menu['admin/commerce/registrations/complete'] = array(
+    'title' => 'Completed Registrations',
+    'description' => 'Manage product registrations that have been purchased.',
+    'access arguments' => array('administer registration'),
+    'page callback' => 'commerce_registration_admin_overview',
+    'file' => 'includes/commerce_registration.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  $menu['admin/commerce/registrations/all'] = array(
+    'title' => 'All Registrations',
+    'description' => 'Manage product registrations that have been purchased.',
+    'access arguments' => array('administer registration'),
+    'page callback' => 'commerce_registration_admin_overview_all',
+    'file' => 'includes/commerce_registration.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+  );
 
   return $menu;
 }
