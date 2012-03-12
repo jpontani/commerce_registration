@@ -26,11 +26,11 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
         $form['settings'][$prod] = array(
           '#type' => 'fieldset',
           '#title' => t('Registration Settings for !product (@sku)',
-                        array(
-                          '!product' => '<em>' . $product->title . '</em>',
-                          '@sku' => $product->sku,
-                        )
-                      ),
+            array(
+              '!product' => '<em>' . $product->title . '</em>',
+              '@sku' => $product->sku,
+            )
+          ),
           '#collapsible' => TRUE,
           '#collapsed' => TRUE,
         );
@@ -73,13 +73,13 @@ function commerce_registration_node_registrations_settings_form_validate($form, 
  * Registration settings form submission for product display nodes.
  */
 function commerce_registration_node_registrations_settings_form_submit($form, &$form_state) {
-  foreach($form_state['values']['settings'] as $id => $settings) {
+  foreach ($form_state['values']['settings'] as $id => $settings) {
     $id = substr($id, 5);
     $fields = array(
-      'status' => $settings['status'], 
-      'capacity' => $settings['capacity'], 
-		  'send_reminder' => $settings['reminder']['send_reminder'],
-		  'settings' => serialize($settings['settings']),
+      'status' => $settings['status'],
+      'capacity' => $settings['capacity'],
+      'send_reminder' => $settings['reminder']['send_reminder'],
+      'settings' => serialize($settings['settings']),
     );
     if ($fields['send_reminder']) {
       $fields['reminder_template'] = $settings['reminder']['reminder_settings']['reminder_template'];
@@ -102,7 +102,7 @@ function commerce_registration_registrations_broadcast_form($form, &$form_state,
   foreach ($fields as $field) {
     if (isset($entity->{$field['field_name']})) {
       foreach ($entity->{$field['field_name']}[LANGUAGE_NONE] as $product) {
-        $product = commerce_product_load($product['product_id']); 
+        $product = commerce_product_load($product['product_id']);
         $products[$product->product_id] = check_plain($product->title);
       }
     }
@@ -130,6 +130,9 @@ function commerce_registration_registrations_broadcast_form($form, &$form_state,
   return $form;
 }
 
+/**
+ * Broadcast email form submit handler.
+ */
 function commerce_registration_registrations_broadcast_form_submit($form, &$form_state) {
   $id = $form_state['values']['product'];
   $subject = $form_state['values']['subject'];

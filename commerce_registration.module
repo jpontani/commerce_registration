@@ -70,7 +70,11 @@ function commerce_registration_menu_alter(&$menu) {
         'load arguments' => array($type),
         'title' => 'Settings',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_registration_node_registrations_settings_form', 0, 1),
+        'page arguments' => array(
+          'commerce_registration_node_registrations_settings_form',
+          0,
+          1,
+        ),
         'access callback' => 'commerce_registration_administer_registrations_access',
         'access arguments' => array(0, 1),
         'file path' => drupal_get_path('module', 'commerce_registration'),
@@ -82,7 +86,11 @@ function commerce_registration_menu_alter(&$menu) {
         'load arguments' => array($type),
         'title' => 'Email Registrants',
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('commerce_registration_registrations_broadcast_form', 0, 1),
+        'page arguments' => array(
+          'commerce_registration_registrations_broadcast_form',
+          0,
+          1
+        ),
         'access callback' => 'commerce_registration_administer_registrations_access',
         'access arguments' => array(0, 1),
         'file path' => drupal_get_path('module', 'commerce_registration'),
@@ -95,8 +103,9 @@ function commerce_registration_menu_alter(&$menu) {
 }
 
 /**
- * Access callback for modifying settings and sending emails for a given
- * product display.
+ * Access callback.
+ * Callback for modifying settings and sending emails for a given product
+ *  display.
  */
 function commerce_registration_administer_registrations_access($type, $node) {
   // Loop through each product on the node, and if it contains a registration
@@ -265,8 +274,8 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           unset($form['submit']);
           $capacity = (int) $settings['capacity'];
           $avail = $capacity - registration_event_count($product->product_id, 'commerce_product');
-          $availtext = ($avail > 0 ?
-            format_plural($avail, '1 slot available', '@count slots available')
+          $availtext = ($avail > 0
+            ? format_plural($avail, '1 slot available', '@count slots available')
             : t('No slots available'));
           $capacity = ($settings['capacity'] == 0 ? t("Unlimited slots available") : $availtext);
           $form['capacity'] = array(
@@ -283,7 +292,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
             $form['not_available'] = array(
               '#type' => 'markup',
               '#markup' => '<p><strong>' . t('This item is currently unavailable.')
-                . '</strong></p>',
+              . '</strong></p>',
             );
           }
         }
@@ -428,8 +437,8 @@ function commerce_registration_commerce_checkout_complete($order) {
 }
 
 /**
-* Implements hook_entity_info_alter().
-*/
+ * Implements hook_entity_info_alter().
+ */
 function commerce_registration_entity_info_alter(&$info) {
   $info['registration']['view modes']['review_pane'] = array(
     'label' => t('Commerce Checkout Review Pane'),

@@ -44,7 +44,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $mail = $form_state['values'][$checkout_pane['pane_id']]['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
         }
         if ($find_values) {
-          // The entity exists already, so let's just load it from the form_state.
+          // The entity exists already, so let's just load it from the
+          // form_state.
           $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         }
         elseif ($order_values && isset($order->data['register_entities'][$prodkey][$i])) {
