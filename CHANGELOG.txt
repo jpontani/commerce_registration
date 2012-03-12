@@ -1,0 +1,8 @@
+Issue #1479014 by jpontani: loop through product field on node properly to get
+all product ids; add div wrappers around registration listing to allow CSS
+styling; change 'und' to LANGUAGE_NONE in two spots
+
+Issue #1478980 by jpontani: add a second display to view to not require the
+Commerce Order relationship to list all registrations; add a second tab on the
+Admin Registrations page to show All Registrations; add optional VBO column to
+view if VBO module exists.

@@ -101,7 +101,7 @@ function commerce_registration_registrations_broadcast_form($form, &$form_state,
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
   foreach ($fields as $field) {
     if (isset($entity->{$field['field_name']})) {
-      foreach ($entity->{$field['field_name']}['und'] as $product) {
+      foreach ($entity->{$field['field_name']}[LANGUAGE_NONE] as $product) {
         $product = commerce_product_load($product['product_id']); 
         $products[$product->product_id] = check_plain($product->title);
       }

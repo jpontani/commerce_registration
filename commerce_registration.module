@@ -126,15 +126,16 @@ function commerce_registration_registration_page($type, $node) {
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
   foreach ($fields as $field) {
     if (isset($node->{$field['field_name']})) {
-      foreach ($node->{$field['field_name']} as $product) {
-        $prodids[] = (int) $product[0]['product_id'];
+      foreach ($node->{$field['field_name']}[LANGUAGE_NONE] as $product) {
+        $prodids[] = (int) $product['product_id'];
       }
     }
   }
   if (!empty($prodids)) {
     foreach ($prodids as $product_id) {
       $prod = commerce_product_load($product_id);
-      $out .= registration_registrations_page('commerce_product', $prod);
+      $out .= "<div class='commerce-product commerce-product-$product_id'>"
+              . registration_registrations_page('commerce_product', $prod) . "</div>";
     }
   }
   else {
