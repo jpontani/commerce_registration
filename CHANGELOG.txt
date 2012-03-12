@@ -1,8 +1,34 @@
+Issue #1476490 by jpontani: added display review_pane for Registrations; change
+review pane to use this new display.
+
 Issue #1479014 by jpontani: loop through product field on node properly to get
-all product ids; add div wrappers around registration listing to allow CSS
-styling; change 'und' to LANGUAGE_NONE in two spots
+all product ids; add div wrappers with classes around registration listing to
+allow CSS styling; change 'und' to LANGUAGE_NONE in two spots
 
 Issue #1478980 by jpontani: add a second display to view to not require the
 Commerce Order relationship to list all registrations; add a second tab on the
 Admin Registrations page to show All Registrations; add optional VBO column to
 view if VBO module exists.
+
+Issue #1478750 by jpontani: removing t() from admin view page, it is
+unnecessary to translate only html.
+
+Issue #1472954 by jpontani: Manage Registrations now shows on product display
+type nodes with proper listing/settings/email forms and handlers to accomodate
+multiple products on a single node.
+
+Issue #1460256 by jpontani: add registration availability to manage display for
+products with a registration field.
+
+by jpontani: checking if the entity exists in the order data array, and
+preventing error message if it doesn't.
+
+Issue #1473462 by jpontani: removing the registration_save as it causes
+validation issues, instead defaulting the registration_id to 0, this should be
+overwritten since IS_NEW is set to true on a new registration object.
+
+Issue #1473462 by jpontani: remove dsm call from previous commit.
+
+Issue #1473462 by jpontani: save the registration on the submit portion of it's
+info, otherwise it will throw an error since registration_id is not set until
+save.

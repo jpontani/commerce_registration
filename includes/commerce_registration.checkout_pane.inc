@@ -230,7 +230,7 @@ function commerce_registration_information_review($form, $form_state, $checkout_
         $l = $i + 1;
         $msg .= "<hr><em><u>" . t("Registrant #@count", array('@count' => $l)) . "</u></em><br />";
         $msg .= "<strong>" . t("Email") . "</strong>:" . check_plain($entity->mail) . "<br />";
-        $msg .= drupal_render(field_attach_view('registration', $entity, 'full'));
+        $msg .= drupal_render(field_attach_view('registration', $entity, 'review_pane'));
       }
     }
   }
