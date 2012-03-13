@@ -445,3 +445,37 @@ function commerce_registration_entity_info_alter(&$info) {
     'custom settings' => TRUE,
   );
 }
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function commerce_registration_theme_registry_alter(&$registry) {
+  // We change the default registration theme function to our custom one to be
+  // able to add the Commerce Order ID to the view.
+  if (!empty($registry['registration']['function'])) {
+    $registry['registration']['theme path'] = drupal_get_path('module', 'commerce_registration');
+    $registry['registration']['function'] = 'theme_registration_with_order';
+  }
+}
+
+/**
+ * Overridden theme handler for registrations.
+ *
+ * @param array $variables
+ *   Contains a complete registration object.
+ */
+function theme_registration_with_order($variables) {
+  $registration = $variables['registration'];
+  $output = theme_registration($variables);
+  if (isset($registration->order_id) && $registration->order_id != 0) {
+    $order = commerce_order_load($registration->order_id);
+    $path = 'user/' . $order->uid . '/orders/' . $order->order_id;
+    if (user_access('administer commerce order entities')) {
+      $path = 'admin/commerce/orders/' . $order->order_id;
+    }
+    $text = t('Order #@order', array('@order' => $order->order_id));
+    $output .= '<div><label>' . t('Order') . '</label>' . l($text, $path) . '</div>';
+  }
+
+  return $output;
+}
