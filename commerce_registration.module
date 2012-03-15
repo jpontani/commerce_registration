@@ -248,6 +248,7 @@ function commerce_registration_get_product_title($product, $showavail = TRUE) {
 function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
   // Add slots available text to Add to Cart form.
   if (substr($form_id, 0, 30) == 'commerce_cart_add_to_cart_form') {
+    $form['#validate'][] = 'commerce_registration_add_to_cart_validate';
     switch ($form['product_id']['#type']) {
       case "select":
         $count = 0;
@@ -267,12 +268,10 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
             }
             else {
               $disabled++;
-              $form['#validate'] = array('commerce_registration_add_to_cart_validate');
             }
           }
         }
         if ($disabled === $count) {
-          $form['product_id']['#options'] = $products;
           $form['product_id']['#disabled'] = TRUE;
           unset($form['submit']);
           $form['unavailable'] = array(
@@ -315,9 +314,6 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
               . '</strong></p>',
             );
           }
-        }
-        else {
-          dsm($form);
         }
         break;
 
@@ -372,7 +368,7 @@ function commerce_registration_add_to_cart_validate($form, &$form_state) {
   $product_id = $form_state['values']['product_id'];
   if (!registration_status('commerce_product', $product_id, TRUE)) {
     form_set_error('product_id',
-      t('The selected product is not available for registration at this time.'));
+      t('This product is not available for registration at this time.'));
     return FALSE;
   }
   return TRUE;
