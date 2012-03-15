@@ -252,24 +252,27 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
       case "select":
         $products = $form['product_id']['#options'];
         foreach ($products as $product_id => $title) {
-          $product = commerce_product_load($product_id);
-          $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
-          $showavail = isset($fieldsettings['registration_available'])
-            && isset($fieldsettings['registration_available']['visible'])
-            && $fieldsettings['registration_available']['visible'];
-          $title = ($showavail ? commerce_registration_get_product_title($product, $showavail) : $product->title);
-          $form['product_id']['#options'][$product_id] = $title;
+          $settings = registration_entity_settings($product_id, 'commerce_product');
+          if (!empty($settings) && registration_status('commerce_product', $product_id)) {
+            $product = commerce_product_load($product_id);
+            $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
+            $showavail = isset($fieldsettings['registration_available'])
+              && isset($fieldsettings['registration_available']['visible'])
+              && $fieldsettings['registration_available']['visible'];
+            $title = ($showavail ? commerce_registration_get_product_title($product, $showavail) : $product->title);
+            $form['product_id']['#options'][$product_id] = $title;
+          }
         }
         break;
 
       case "hidden":
-        $product = commerce_product_load($form['product_id']['#value']);
-        $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
-        $showavail = isset($fieldsettings['registration_available'])
-          && isset($fieldsettings['registration_available']['visible'])
-          && $fieldsettings['registration_available']['visible'];
-        $settings = registration_entity_settings($product->product_id, 'commerce_product');
-        if (!empty($settings) && $settings['status'] == 1) {
+        $settings = registration_entity_settings($form['product_id']['#value'], 'commerce_product');
+        if (!empty($settings) && registration_status('commerce_product', $form['product_id']['#value'])) {
+          $product = commerce_product_load($form['product_id']['#value']);
+          $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
+          $showavail = isset($fieldsettings['registration_available'])
+            && isset($fieldsettings['registration_available']['visible'])
+            && $fieldsettings['registration_available']['visible'];
           $submit = $form['submit'];
           unset($form['submit']);
           $capacity = (int) $settings['capacity'];
@@ -318,6 +321,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
       '#weight' => 45,
+      '#tree' => TRUE,
     );
     // Grab the registration settings form for this entity.
     $addform = registration_registrations_settings_form(array(), $form_state, "commerce_product", $product);
@@ -334,6 +338,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
     }
     // Add the registration settings form to the base form.
     $form['registration_settings'] += $addform;
+    $form['registration_settings']['reminder']['#parents'] = array('registration_settings');
   }
 }
 

@@ -14,6 +14,7 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
   module_load_include('inc', 'registration', '/includes/registration.forms');
   $form = array();
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
+  $form_state['redirect_to'] = "node/" . $entity->nid . "/registrations/settings";
   foreach ($fields as $field) {
     if (isset($entity->{$field['field_name']})) {
       $form['settings'] = array(
@@ -44,6 +45,7 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
           ),
         );
         $form['settings'][$prod] += $addform;
+        $form['settings'][$prod]['reminder']['#parents'] = array('settings', $prod);
       }
     }
   }
@@ -67,6 +69,17 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
  * Registration settings form validation for product display nodes.
  */
 function commerce_registration_node_registrations_settings_form_validate($form, &$form_state) {
+  foreach ($form_state['values']['settings'] as $id => $settings) {
+    $id = substr($id, 5);
+    $temp_form_state = array(
+      'entity' => array(
+        'entity_id' => $id,
+        'entity_type' => 'commerce_product',
+      ),
+      'values' => $settings,
+    );
+    registration_registrations_settings_form_validate($form, $temp_form_state);
+  }
 }
 
 /**
@@ -75,16 +88,14 @@ function commerce_registration_node_registrations_settings_form_validate($form, 
 function commerce_registration_node_registrations_settings_form_submit($form, &$form_state) {
   foreach ($form_state['values']['settings'] as $id => $settings) {
     $id = substr($id, 5);
-    $fields = array(
-      'status' => $settings['status'],
-      'capacity' => $settings['capacity'],
-      'send_reminder' => $settings['reminder']['send_reminder'],
-      'settings' => serialize($settings['settings']),
+    $temp_form_state = array(
+      'entity' => array(
+        'entity_id' => $id,
+        'entity_type' => 'commerce_product',
+      ),
+      'values' => $settings,
     );
-    if ($fields['send_reminder']) {
-      $fields['reminder_template'] = $settings['reminder']['reminder_settings']['reminder_template'];
-    }
-    registration_update_entity_settings($id, 'commerce_product', $fields);
+    registration_registrations_settings_form_submit($form, $temp_form_state);
   }
 }
 
@@ -164,18 +175,8 @@ function commerce_registration_registrations_broadcast_form_submit($form, &$form
  */
 function commerce_registration_registration_settings_form_validate($form, $form_state) {
   // Ensure capacity is a positive integer.
-  $capacity = $form_state['values']['registration_settings']['capacity'];
-  if (!is_numeric($capacity) || ((int) $capacity != $capacity) || ($capacity < 0)) {
-    form_set_error('capacity', t('Capacity must be a positive integer.'));
-    return FALSE;
-  }
-
-  // Validate from address.
-  if (!valid_email_address($form_state['values']['registration_settings']['settings']['from_address'])) {
-    form_set_error('registration_settings][settings][from_address', t('From email address is invalid.'));
-    return FALSE;
-  }
-  return TRUE;
+  $temp_form_state = array('values' => $form_state['values']['registration_settings']);
+  return registration_registrations_settings_form_validate($form, $temp_form_state);
 }
 
 /**
@@ -183,18 +184,13 @@ function commerce_registration_registration_settings_form_validate($form, $form_
  */
 function commerce_registration_registration_settings_form_submit($form, &$form_state) {
   list($entity_id) = entity_extract_ids("commerce_product", $form_state['commerce_product']);
-  watchdog('commerce registration', serialize($form_state['commerce_product']));
-  $fields = array(
-    'status' => $form_state['values']['registration_settings']['reg_status'],
-    'capacity' => $form_state['values']['registration_settings']['capacity'],
-    'send_reminder' => $form_state['values']['send_reminder'],
-    'settings' => serialize($form_state['values']['registration_settings']['settings']),
+  $temp_form_state = array(
+    'entity' => array(
+      'entity_type' => 'commerce_product',
+      'entity_id' => $entity_id,
+    ),
+    'values' => $form_state['values']['registration_settings'],
   );
-  if ($form_state['values']['send_reminder']) {
-    $fields['reminder_date'] = $form_state['values']['reminder_date']['year']
-      . '-' . $form_state['values']['reminder_date']['month']
-      . '-' . $form_state['values']['reminder_date']['day'];
-    $fields['reminder_template'] = $form_state['values']['reminder_template'];
-  }
-  registration_update_entity_settings($entity_id, "commerce_product", $fields);
+  $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
+  registration_registrations_settings_form_submit($form, $temp_form_state);
 }
