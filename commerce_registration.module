@@ -250,24 +250,41 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
   if (substr($form_id, 0, 30) == 'commerce_cart_add_to_cart_form') {
     switch ($form['product_id']['#type']) {
       case "select":
-        $products = $form['product_id']['#options'];
-        foreach ($products as $product_id => $title) {
+        $count = 0;
+        $disabled = 0;
+        foreach ($form['product_id']['#options'] as $product_id => $title) {
+          $count++;
           $settings = registration_entity_settings($product_id, 'commerce_product');
-          if (!empty($settings) && registration_status('commerce_product', $product_id)) {
-            $product = commerce_product_load($product_id);
-            $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
-            $showavail = isset($fieldsettings['registration_available'])
-              && isset($fieldsettings['registration_available']['visible'])
-              && $fieldsettings['registration_available']['visible'];
-            $title = ($showavail ? commerce_registration_get_product_title($product, $showavail) : $product->title);
-            $form['product_id']['#options'][$product_id] = $title;
+          if (!empty($settings)) {
+            if (registration_status('commerce_product', $product_id, TRUE) == 1) {
+              $product = commerce_product_load($product_id);
+              $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
+              $showavail = isset($fieldsettings['registration_available'])
+                && isset($fieldsettings['registration_available']['visible'])
+                && $fieldsettings['registration_available']['visible'];
+              $title = ($showavail ? commerce_registration_get_product_title($product, $showavail) : $product->title);
+              $form['product_id']['#options'][$product_id] = $title;
+            }
+            else {
+              $disabled++;
+              $form['#validate'] = array('commerce_registration_add_to_cart_validate');
+            }
           }
+        }
+        if ($disabled === $count) {
+          $form['product_id']['#options'] = $products;
+          $form['product_id']['#disabled'] = TRUE;
+          unset($form['submit']);
+          $form['unavailable'] = array(
+            '#type' => 'markup',
+            '#markup' => t('There are no products available for registration at this time.'),
+          );
         }
         break;
 
       case "hidden":
         $settings = registration_entity_settings($form['product_id']['#value'], 'commerce_product');
-        if (!empty($settings) && registration_status('commerce_product', $form['product_id']['#value'])) {
+        if (!empty($settings) && registration_status('commerce_product', $form['product_id']['#value'], TRUE)) {
           $product = commerce_product_load($form['product_id']['#value']);
           $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
           $showavail = isset($fieldsettings['registration_available'])
@@ -298,6 +315,9 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
               . '</strong></p>',
             );
           }
+        }
+        else {
+          dsm($form);
         }
         break;
 
@@ -340,6 +360,22 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
     $form['registration_settings'] += $addform;
     $form['registration_settings']['reminder']['#parents'] = array('registration_settings');
   }
+}
+
+/**
+ * Custom validation handler for add to cart form.
+ * Checks if the product being added is available for registration before
+ * adding it to the cart. If it is not available, it is not added and a message
+ * is shown to the user.
+ */
+function commerce_registration_add_to_cart_validate($form, &$form_state) {
+  $product_id = $form_state['values']['product_id'];
+  if (!registration_status('commerce_product', $product_id, TRUE)) {
+    form_set_error('product_id',
+      t('The selected product is not available for registration at this time.'));
+    return FALSE;
+  }
+  return TRUE;
 }
 
 /**
