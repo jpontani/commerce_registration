@@ -88,14 +88,27 @@ function commerce_registration_node_registrations_settings_form_validate($form, 
 function commerce_registration_node_registrations_settings_form_submit($form, &$form_state) {
   foreach ($form_state['values']['settings'] as $id => $settings) {
     $id = substr($id, 5);
-    $temp_form_state = array(
-      'entity' => array(
-        'entity_id' => $id,
-        'entity_type' => 'commerce_product',
-      ),
-      'values' => $settings,
+    $fields = array(
+      'status' => $settings['status'],
+      'capacity' => $settings['capacity'],
+      'send_reminder' => $settings['send_reminder'],
+      'settings' => serialize($settings['settings']),
+      'open' => NULL,
+      'close' => NULL,
     );
-    registration_registrations_settings_form_submit($form, $temp_form_state);
+    if ($settings['send_reminder']) {
+      $fields['reminder_date'] = $settings['reminder_date']['year'] .
+        '-' . $settings['reminder_date']['month'] .
+        '-' . $settings['reminder_date']['day'];
+      $fields['reminder_template'] = $settings['reminder_template'];
+    }
+    if (!empty($settings['scheduling']['open'])) {
+      $fields['open'] = date('Y-m-d H:i:s', strtotime($settings['scheduling']['open']));
+    }
+    if (!empty($settings['scheduling']['close'])) {
+      $fields['close'] = date('Y-m-d H:i:s', strtotime($settings['scheduling']['close']));
+    }
+    registration_update_entity_settings($id, 'commerce_product', $fields);
   }
 }
 
@@ -174,8 +187,10 @@ function commerce_registration_registrations_broadcast_form_submit($form, &$form
  * New registration settings validation handler to use with Commerce Products.
  */
 function commerce_registration_registration_settings_form_validate($form, $form_state) {
-  // Ensure capacity is a positive integer.
   $temp_form_state = array('values' => $form_state['values']['registration_settings']);
+  if (!function_exists('registration_registrations_settings_form_validate')) {
+    module_load_include('inc', 'registration', '/includes/registration.forms');
+  }
   return registration_registrations_settings_form_validate($form, $temp_form_state);
 }
 
@@ -191,6 +206,5 @@ function commerce_registration_registration_settings_form_submit($form, &$form_s
     ),
     'values' => $form_state['values']['registration_settings'],
   );
-  $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
   registration_registrations_settings_form_submit($form, $temp_form_state);
 }
