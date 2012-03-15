@@ -188,6 +188,7 @@ function commerce_registration_registrations_broadcast_form_submit($form, &$form
  */
 function commerce_registration_registration_settings_form_validate($form, $form_state) {
   $temp_form_state = array('values' => $form_state['values']['registration_settings']);
+  $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
   if (!function_exists('registration_registrations_settings_form_validate')) {
     module_load_include('inc', 'registration', '/includes/registration.forms');
   }
@@ -206,5 +207,6 @@ function commerce_registration_registration_settings_form_submit($form, &$form_s
     ),
     'values' => $form_state['values']['registration_settings'],
   );
+  $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
   registration_registrations_settings_form_submit($form, $temp_form_state);
 }

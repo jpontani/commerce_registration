@@ -355,6 +355,11 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
     // Add the registration settings form to the base form.
     $form['registration_settings'] += $addform;
     $form['registration_settings']['reminder']['#parents'] = array('registration_settings');
+    $form['registration_settings']['reminder']['reminder_settings']['#states']['visible'] = array(
+      ':input[name="registration_settings[send_reminder]"]' => array(
+        'checked' => TRUE,
+      ),
+    );
   }
 }
 
