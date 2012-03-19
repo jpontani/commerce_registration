@@ -464,21 +464,6 @@ function commerce_registration_field_extra_fields_alter(&$info) {
 }
 
 /**
- * Implements hook_commerce_checkout_complete().
- */
-function commerce_registration_commerce_checkout_complete($order) {
-  if (isset($order->data['register_entities'])) {
-    foreach ($order->data['register_entities'] as $product => $entities) {
-      foreach ($entities as $key => $entity) {
-        registration_save($entity);
-        $order->data['register_entities'][$product][$key] = $entity;
-      }
-    }
-    commerce_order_save($order);
-  }
-}
-
-/**
  * Implements hook_entity_info_alter().
  */
 function commerce_registration_entity_info_alter(&$info) {

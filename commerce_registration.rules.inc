@@ -147,13 +147,26 @@ function commerce_registration_item_can_register($line_item) {
  * @todo Custom status definitions.
  */
 function commerce_registration_mark_paid($order) {
+  if (!isset($order->data['register_entities'])) {
+    return;
+  }
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
     if (commerce_registration_item_can_register($line_item_wrapper->value())) {
       $product = $line_item_wrapper->commerce_product;
+      if (!isset($order->data['register_entities']['prod-' . $product->sku->value()])) {
+        // If we have no registration entities for this product in our order's
+        // data array, we skip to the next.
+        continue;
+      }
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
+        if (!isset($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
+          // If this registration doesn't exist in our data array, skip to the
+          // next entry.
+          continue;
+        }
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
         registration_save($entity);
       }
@@ -170,6 +183,10 @@ function commerce_registration_mark_paid($order) {
  *   The Commerce Order object to cancel all attached registrations.
  */
 function commerce_registration_cancel_registrations($order) {
+  // Only cancel registrations if they actually exist.
+  if (!isset($order->data['register_entities'])) {
+    return;
+  }
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
@@ -178,6 +195,10 @@ function commerce_registration_cancel_registrations($order) {
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
         $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+        if (!isset($entity->registration_id) || $entity->registration_id == 0) {
+          // If the registration_id is not valid, skip this one.
+          continue;
+        }
         // Notify field api that the entity was deleted.
         field_attach_delete('registration', $entity);
         entity_delete('registration', $entity->registration_id);
