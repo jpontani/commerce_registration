@@ -22,30 +22,32 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
         '#tree' => TRUE,
       );
       foreach ($entity->{$field['field_name']}['und'] as $product) {
-        $product = commerce_product_load($product['product_id']);
-        $prod = 'prod-' . check_plain($product->product_id);
-        $form['settings'][$prod] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Registration Settings for !product (@sku)',
-            array(
-              '!product' => '<em>' . $product->title . '</em>',
-              '@sku' => $product->sku,
-            )
-          ),
-          '#collapsible' => TRUE,
-          '#collapsed' => TRUE,
-        );
-        $addform = registration_registrations_settings_form($form, $form_state, 'commerce_product', $product);
-        unset($addform['save']);
-        $addform['status']['#weight'] = -10;
-        $addform['capacity']['#weight'] = -9;
-        $addform['reminder']['reminder_settings']['#states']['visible'] = array(
-          ':input[name="settings[' . $prod . '][reminder][send_reminder]"]' => array(
-            'checked' => TRUE,
-          ),
-        );
-        $form['settings'][$prod] += $addform;
-        $form['settings'][$prod]['reminder']['#parents'] = array('settings', $prod);
+        if (commerce_registration_product_has_registration_field($product['product_id'])) {
+          $product = commerce_product_load($product['product_id']);
+          $prod = 'prod-' . check_plain($product->product_id);
+          $form['settings'][$prod] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Registration Settings for !product (@sku)',
+              array(
+                '!product' => '<em>' . $product->title . '</em>',
+                '@sku' => $product->sku,
+              )
+            ),
+            '#collapsible' => TRUE,
+            '#collapsed' => TRUE,
+          );
+          $addform = registration_registrations_settings_form($form, $form_state, 'commerce_product', $product);
+          unset($addform['save']);
+          $addform['status']['#weight'] = -10;
+          $addform['capacity']['#weight'] = -9;
+          $addform['reminder']['reminder_settings']['#states']['visible'] = array(
+            ':input[name="settings[' . $prod . '][reminder][send_reminder]"]' => array(
+              'checked' => TRUE,
+            ),
+          );
+          $form['settings'][$prod] += $addform;
+          $form['settings'][$prod]['reminder']['#parents'] = array('settings', $prod);
+        }
       }
     }
   }
@@ -126,8 +128,10 @@ function commerce_registration_registrations_broadcast_form($form, &$form_state,
   foreach ($fields as $field) {
     if (isset($entity->{$field['field_name']})) {
       foreach ($entity->{$field['field_name']}[LANGUAGE_NONE] as $product) {
-        $product = commerce_product_load($product['product_id']);
-        $products[$product->product_id] = check_plain($product->title);
+        if (commerce_registration_product_has_registration_field($product['product_id'])) {
+          $product = commerce_product_load($product['product_id']);
+          $products[$product->product_id] = check_plain($product->title);
+        }
       }
     }
   }
