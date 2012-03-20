@@ -61,6 +61,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['relationships']['order_id']['table'] = 'registration';
   $handler->display->display_options['relationships']['order_id']['field'] = 'order_id';
   $handler->display->display_options['relationships']['order_id']['required'] = 1;
+  
   if (module_exists('views_bulk_operations')) {
     /* Field: Registration: Bulk operations */
     $handler->display->display_options['fields']['views_bulk_operations']['id'] = 'views_bulk_operations';
@@ -356,6 +357,11 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['sorts']['created']['table'] = 'registration';
   $handler->display->display_options['sorts']['created']['field'] = 'created';
   $handler->display->display_options['sorts']['created']['order'] = 'DESC';
+  /* Filter criterion: Registration: Entity_type */
+  $handler->display->display_options['filters']['entity_type']['id'] = 'entity_type';
+  $handler->display->display_options['filters']['entity_type']['table'] = 'registration';
+  $handler->display->display_options['filters']['entity_type']['field'] = 'entity_type';
+  $handler->display->display_options['filters']['entity_type']['value'] = 'commerce_product';
 
   /* Display: Completed Registrations with Order ID */
   $handler = $view->new_display('block', 'Completed Registrations with Order ID', 'commerce_regs_w_order');
