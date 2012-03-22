@@ -69,6 +69,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity->author_uid = $user->uid;
           $entity->order_id = $order->order_id;
           $entity->mail = $mail;
+          $entity->count = 1;
         }
         $form[$prodkey][$prodkey . '-reg-' . $i]['mail'] = array(
           '#weight' => -50,
