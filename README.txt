@@ -35,3 +35,14 @@ Setup:
  When through with the order, the registration will be saved once the checkout
  is complete. You can now view registrations for the product by going to the
  product display node and clicking on the Registrations tab.
+
+Rules Integration
+ Commerce Registration ships with a default rule to mark registrations as paid
+ when an order is first marked as paid in full. With this, registrations will
+ get saved regardless of the order status, as soon as the order triggers the
+ event of "paid in full". Users must modify the existing Commerce rules in
+ order to have an order be marked as Completed.
+ 
+ There is a rule action provided by Commerce Registration called "Mark
+ Registrations as paid". This action can be added to any event trigger, so long
+ as the event provides a Commerce Order reference.
