@@ -14,14 +14,14 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   global $user;
   $show_form = FALSE;
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  if (empty($form)) {
-    $form = array();
-  }
+  $form = array();
   // Determine if we should create a new entity or if the user has gone back in
   // the checkout process and we should load previously stored values from
   // either the checkout pane or from the order.
   $find_values = isset($form_state['values'][$checkout_pane['pane_id']]['register_entities']);
   $order_values = isset($order->data['register_entities']);
+  $override_title = variable_get('commerce_registration_product_title', NULL);
+  $hide_email = variable_get('commerce_registration_hide_email_logged_in', FALSE);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
     $settings = registration_entity_settings($id, 'commerce_product');
@@ -34,11 +34,17 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         // We add a single registration for the quantity of the product being
         // purchased/registered for.
         $label = $i + 1;
+        $title = check_plain($product->title->value() . ' - Registrant #' . $label);
+        if (isset($override_title)) {
+          $title = str_replace('[title]', $product->title->value(), $override_title);
+          $title = str_replace('[index]', $label, $title);
+        }
         $form[$prodkey][$prodkey . '-reg-' . $i] = array(
           '#type' => 'fieldset',
-          '#title' => check_plain($product->title->value() . ' - Registrant #' . $label),
+          '#title' => $title,
           '#collapsible' => TRUE,
           '#tree' => TRUE,
+          '#description' => variable_get('commerce_registration_registrant_help', ''),
         );
         $entity = NULL;
         $mail = '';
@@ -73,7 +79,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         }
         $form[$prodkey][$prodkey . '-reg-' . $i]['mail'] = array(
           '#weight' => -50,
-          '#type' => 'textfield',
+          '#type' => ($user->uid != 0 && $hide_email ? 'hidden' : 'textfield'),
           '#title' => t('Email Address'),
           '#default_value' => $entity->mail,
           '#required' => TRUE,
@@ -246,6 +252,36 @@ function commerce_registration_information_review($form, $form_state, $checkout_
     }
   }
   return $msg;
+}
+
+/**
+ * Commerce checkout pane settings form builder.
+ */
+function commerce_registration_information_settings_form($checkout_pane) {
+  $form = array();
+
+  $form['commerce_registration_product_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Product Registration Title'),
+    '#description' => t('The text to populate the fieldset label for a registrant\'s information.') . '<br>'
+        . t('Available tokens are [title] for the product title, and [index] for a countable index value.'),
+    '#default_value' => variable_get('commerce_registration_product_title', ''),
+  );
+
+  $form['commerce_registration_registrant_help'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Product Registration Fieldset Help Text'),
+    '#description' => t('The help text to display to the user entering registration information.'),
+    '#default_value' => variable_get('commerce_registration_registrant_help', ''),
+  );
+
+  $form['commerce_registration_hide_email_logged_in'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide the Email field for logged in users'),
+    '#default_value' => variable_get('commerce_registration_hide_email_logged_in', ''),
+  );
+
+  return $form;
 }
 
 /**
