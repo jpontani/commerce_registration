@@ -94,7 +94,7 @@ function commerce_registration_node_registrations_settings_form_submit($form, &$
       'status' => $settings['status'],
       'capacity' => $settings['capacity'],
       'send_reminder' => $settings['send_reminder'],
-      'settings' => serialize($settings['settings']),
+      'settings' => $settings['settings'],
       'open' => NULL,
       'close' => NULL,
     );
@@ -110,6 +110,7 @@ function commerce_registration_node_registrations_settings_form_submit($form, &$
     if (!empty($settings['scheduling']['close'])) {
       $fields['close'] = date('Y-m-d H:i:s', strtotime($settings['scheduling']['close']));
     }
+    $fields['settings'] = serialize($fields['settings']);
     registration_update_entity_settings($id, 'commerce_product', $fields);
   }
 }

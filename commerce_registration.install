@@ -7,6 +7,31 @@
  */
 
 /**
+ * Implements hook_schema().
+ */
+function commerce_registration_schema() {
+  $schema = array();
+  $schema['commerce_registration_node_settings'] = array(
+    'description' => 'Registration settings for product display type nodes.',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'description' => 'The node ID.',
+        'not null' => TRUE,
+      ),
+      'settings' => array(
+        'description' => 'Serialized array of settings for the node.',
+        'type' => 'text',
+        'size' => 'medium',
+        'serialized' => TRUE,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+  return $schema;
+}
+
+/**
  * Implements hook_schema_alter().
  */
 function commerce_registration_schema_alter(&$schema) {

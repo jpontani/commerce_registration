@@ -115,7 +115,7 @@ function commerce_registration_administer_registrations_access($type, $node) {
     if (isset($node->{$field['field_name']})) {
       foreach ($node->{$field['field_name']} as $product) {
         $product = commerce_product_load($product[0]['product_id']);
-        if (registration_get_entity_registration_type('commerce_product', $product)) {
+        if (registration_get_entity_registration_type('commerce_product', $product) && !commerce_registration_hide_tab($node)) {
           if (user_access('administer registration')) {
             return TRUE;
           }
@@ -124,6 +124,25 @@ function commerce_registration_administer_registrations_access($type, $node) {
     }
   }
   return registration_administer_registrations_access($type, $node);
+}
+
+/**
+ * Checks if we should hide the Manage Registrations tab for this node.
+ */
+function commerce_registration_hide_tab($node) {
+  $node_settings = db_select('commerce_registration_node_settings', 'ns')
+    ->fields('ns', array('settings'))
+    ->condition('nid', $node->nid)
+    ->execute()
+    ->fetchCol();
+  $node_settings = $node_settings[0];
+  if (!is_array($node_settings)) {
+    $node_settings = unserialize($node_settings);
+  }
+  if (isset($node_settings['hide_from_display'])) {
+    return $node_settings['hide_from_display'];
+  }
+  return FALSE;
 }
 
 /**
@@ -330,6 +349,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
   elseif (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
     // Add settings to Commerce Product Add/Edit Form.
     $product = $form_state['commerce_product'];
+    $settings = registration_entity_settings($product->product_id, 'commerce_product');
     if (commerce_registration_product_has_registration_field($product->product_id)) {
       if (!function_exists("registration_registrations_settings_form")) {
         module_load_include("inc", "registration", "/includes/registration.forms");
@@ -378,8 +398,62 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           'checked' => TRUE,
         ),
       );
+      $form['registration_settings']['settings']['hide_from_display'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Hide Manage Registrations tab from product display nodes'),
+        '#default_value' => (isset($settings['settings']['hide_from_display']) ? $settings['settings']['hide_from_display'] : 0),
+      );
     }
   }
+  elseif (substr($form_id, -9) == 'node_form') {
+    $node = $form_state['node'];
+    $fields = field_read_fields(array('type' => 'commerce_product_reference'));
+    $has_product_reference = FALSE;
+    foreach ($fields as $field) {
+      if (isset($node->{$field['field_name']})) {
+        $has_product_reference = TRUE;
+        break;
+      }
+    }
+    if ($has_product_reference) {
+      $node_settings = db_select('commerce_registration_node_settings', 'ns')
+        ->fields('ns', array('settings'))
+        ->condition('nid', $node->nid)
+        ->execute()
+        ->fetchCol();
+      $node_settings = $node_settings[0];
+      if (!is_array($node_settings)) {
+        $node_settings = unserialize($node_settings);
+      }
+      $form['commerce_registration'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Commerce Registration settings'),
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#group' => 'additional_settings',
+        '#tree' => TRUE,
+      );
+      $form['commerce_registration']['hide_from_display'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Hide Manage Registrations tab on this node'),
+        '#default_value' => (isset($node_settings['hide_from_display']) ? $node_settings['hide_from_display'] : 0),
+      );
+      $form['#submit'][] = 'commerce_registration_node_settings_form_submit';
+    }
+  }
+}
+
+/**
+ * Submit handler for node settings.
+ */
+function commerce_registration_node_settings_form_submit($form, $form_state) {
+  $settings = serialize($form_state['values']['commerce_registration']);
+  db_merge('commerce_registration_node_settings')
+    ->key(array('nid' => $form_state['node']->nid))
+    ->fields(array(
+      'settings' => $settings,
+    ))
+    ->execute();
 }
 
 /**
