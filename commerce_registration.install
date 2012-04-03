@@ -63,3 +63,12 @@ function commerce_registration_uninstall() {
   // Drop the order_id field from the registration table.
   db_drop_field("registration", "order_id");
 }
+
+/**
+ * Adds the commerce_registration_node_settings table.
+ */
+function commerce_registration_update_7201() {
+  if (!db_table_exists('commerce_registration_node_settings')) {
+    db_create_table('commerce_registration_node_settings', drupal_get_schema_unprocessed('commerce_registration', 'commerce_registration_node_settings'));
+  }
+}
