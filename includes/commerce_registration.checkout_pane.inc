@@ -65,23 +65,17 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           // Entity doesn't exist, so we need to create a new registration.
           $bundle = registration_get_entity_registration_type('commerce_product',
                       $line_item_wrapper->commerce_product->value());
-          $entity = entity_get_controller('registration')->create(array('type' => $bundle));
-          $entity->registration_id = 0;
-          $entity->entity_type = 'commerce_product';
-          $entity->entity_id = $product->product_id->value();
-          $entity->entity = entity_load_single($entity->entity_type, $entity->entity_id);
-          $entity->created = REQUEST_TIME;
-          $entity->updated = REQUEST_TIME;
-          $entity->author_uid = $user->uid;
-          $entity->order_id = $order->order_id;
-          $entity->mail = $mail;
-          $entity->count = 1;
+          $entity = commerce_registration_create_product_registration(
+            $line_item_wrapper->commerce_product->product_id->value(),
+            $bundle,
+            $order->order_id
+          );
         }
         $form[$prodkey][$prodkey . '-reg-' . $i]['mail'] = array(
           '#weight' => -50,
           '#type' => ($user->uid != 0 && $hide_email ? 'hidden' : 'textfield'),
           '#title' => t('Email Address'),
-          '#default_value' => $entity->mail,
+          '#default_value' => $mail,
           '#required' => TRUE,
           '#parents' => array(
             'registration_information',
@@ -246,7 +240,7 @@ function commerce_registration_information_review($form, $form_state, $checkout_
         $entity = $order->data['register_entities'][$prodkey][$i];
         $l = $i + 1;
         $msg .= "<hr><em><u>" . t("Registrant #@count", array('@count' => $l)) . "</u></em><br />";
-        $msg .= "<strong>" . t("Email") . "</strong>:" . check_plain($entity->mail) . "<br />";
+        $msg .= "<strong>" . t("Email") . "</strong>: " . check_plain($entity->mail) . "<br />";
         $msg .= drupal_render(field_attach_view('registration', $entity, 'review_pane'));
       }
     }
@@ -310,4 +304,29 @@ function commerce_registration_entity_update_fields(&$entity, $values) {
   foreach ($values as $key => $value) {
     $entity->$key = $value;
   }
+}
+
+/**
+ * Helper function to create a new registration for a product.
+ *
+ * @param int $product_id
+ * @param string $bundle
+ * @param int $order_id
+ *
+ * @return RegistrationEntity
+ */
+function commerce_registration_create_product_registration($product_id, $bundle, $order_id) {
+  global $user;
+  $entity = entity_get_controller('registration')->create(array('type' => $bundle));
+  $entity->registration_id = 0;
+  $entity->entity_type = 'commerce_product';
+  $entity->entity_id = $product_id;
+  $entity->entity = entity_load_single($entity->entity_type, $entity->entity_id);
+  $entity->created = REQUEST_TIME;
+  $entity->updated = REQUEST_TIME;
+  $entity->author_uid = $user->uid;
+  $entity->user_uid = $user->uid;
+  $entity->order_id = $order_id;
+  $entity->count = 1;
+  return $entity;
 }
