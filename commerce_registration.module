@@ -243,10 +243,10 @@ function commerce_registration_product_title($line_item) {
  *   Product title with remaining capacity if available.
  */
 function commerce_registration_get_product_title($product, $showavail = TRUE) {
-  $settings = registration_entity_settings($product->product_id, 'commerce_product');
+  $settings = registration_entity_settings('commerce_product', $product->product_id);
   if (!empty($settings) && $settings['status'] == 1 && $showavail) {
     $capacity = (int) $settings['capacity'];
-    $filled = (int) registration_event_count($product->product_id, 'commerce_product');
+    $filled = (int) registration_event_count('commerce_product', $product->product_id);
     $avail = $capacity - $filled;
     $availtext = ($avail > 0 ? format_plural($avail, '1 slot available', '@count slots available') : 'No slots available');
     $capacitytext = ($capacity == 0 ? t("Unlimited slots available") : $availtext);
@@ -280,7 +280,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           $count++;
           if (commerce_registration_product_has_registration_field($product->product_id)) {
             $total_regs++;
-            $settings = registration_entity_settings($product_id, 'commerce_product');
+            $settings = registration_entity_settings('commerce_product', $product_id);
             if (registration_get_entity_registration_type('commerce_product', $product) && !empty($settings)) {
               if (registration_status('commerce_product', $product_id, TRUE) == 1) {
                 $fieldsettings = field_extra_fields_get_display('commerce_product', $product->type, 'default');
@@ -308,7 +308,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
 
       case "hidden":
         $product = commerce_product_load($form['product_id']['#value']);
-        $settings = registration_entity_settings($form['product_id']['#value'], 'commerce_product');
+        $settings = registration_entity_settings('commerce_product', $form['product_id']['#value']);
         if (commerce_registration_product_has_registration_field($product->product_id)
             && !empty($settings)
             && registration_status('commerce_product', $form['product_id']['#value'], TRUE)) {
@@ -319,7 +319,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           $submit = $form['submit'];
           unset($form['submit']);
           $capacity = (int) $settings['capacity'];
-          $avail = $capacity - registration_event_count($product->product_id, 'commerce_product');
+          $avail = $capacity - registration_event_count('commerce_product', $product->product_id);
           $availtext = ($avail > 0
             ? format_plural($avail, '1 slot available', '@count slots available')
             : t('No slots available'));
@@ -349,7 +349,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
   elseif (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
     // Add settings to Commerce Product Add/Edit Form.
     $product = $form_state['commerce_product'];
-    $settings = registration_entity_settings($product->product_id, 'commerce_product');
+    $settings = registration_entity_settings('commerce_product', $product->product_id);
     if (commerce_registration_product_has_registration_field($product->product_id)) {
       if (!function_exists("registration_registrations_settings_form")) {
         module_load_include("inc", "registration", "/includes/registration.forms");

@@ -95,7 +95,7 @@ function commerce_registration_rules_action_info() {
 function commerce_registration_order_has_registration($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $id = $line_item_wrapper->commerce_product->product_id->value();
-  $settings = registration_entity_settings($id, 'commerce_product');
+  $settings = registration_entity_settings('commerce_product', $id);
   return !empty($settings);
 }
 
@@ -114,13 +114,13 @@ function commerce_registration_order_has_registration($line_item) {
 function commerce_registration_item_can_register($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $id = $line_item_wrapper->commerce_product->product_id->value();
-  $settings = registration_entity_settings($id, 'commerce_product');
+  $settings = registration_entity_settings('commerce_product', $id);
   if (empty($settings)) {
     return FALSE;
   }
   $room = (int) $settings['capacity'];
   if ($room != 0) {
-    $room -= (int) registration_event_count($id, 'commerce_product');
+    $room -= (int) registration_event_count('commerce_product', $id);
   }
   $room = ($settings['capacity'] == 0 ? TRUE : ($room > 0 ? TRUE : FALSE));
   return ($settings['status'] == 1 && $room);

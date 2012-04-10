@@ -14,7 +14,6 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
   module_load_include('inc', 'registration', '/includes/registration.forms');
   $form = array();
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
-  $form_state['redirect_to'] = "node/" . $entity->nid . "/registrations/settings";
   foreach ($fields as $field) {
     if (isset($entity->{$field['field_name']})) {
       $form['settings'] = array(
@@ -90,28 +89,14 @@ function commerce_registration_node_registrations_settings_form_validate($form, 
 function commerce_registration_node_registrations_settings_form_submit($form, &$form_state) {
   foreach ($form_state['values']['settings'] as $id => $settings) {
     $id = substr($id, 5);
-    $fields = array(
-      'status' => $settings['status'],
-      'capacity' => $settings['capacity'],
-      'send_reminder' => $settings['send_reminder'],
-      'settings' => $settings['settings'],
-      'open' => NULL,
-      'close' => NULL,
+    $temp_form_state = array(
+      'entity' => array(
+        'entity_id' => $id,
+        'entity_type' => 'commerce_product',
+      ),
+      'values' => $settings,
     );
-    if ($settings['send_reminder']) {
-      $fields['reminder_date'] = $settings['reminder_date']['year'] .
-        '-' . $settings['reminder_date']['month'] .
-        '-' . $settings['reminder_date']['day'];
-      $fields['reminder_template'] = $settings['reminder_template'];
-    }
-    if (!empty($settings['scheduling']['open'])) {
-      $fields['open'] = date('Y-m-d H:i:s', strtotime($settings['scheduling']['open']));
-    }
-    if (!empty($settings['scheduling']['close'])) {
-      $fields['close'] = date('Y-m-d H:i:s', strtotime($settings['scheduling']['close']));
-    }
-    $fields['settings'] = serialize($fields['settings']);
-    registration_update_entity_settings($id, 'commerce_product', $fields);
+    registration_registrations_settings_form_submit(array(), $temp_form_state);
   }
 }
 
