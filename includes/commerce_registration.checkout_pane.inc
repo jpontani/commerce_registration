@@ -2,9 +2,6 @@
 /**
  * @file
  * Checkout pane callback functions.
- *
- * @todo Don't manually create a registration entity, use the function from
- *   Entity Registrations to create the new registration.
  */
 
 /**
@@ -48,40 +45,83 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         );
         $entity = NULL;
         $mail = '';
-        if ($user->uid != 0) {
-          $mail = $user->mail;
-        }
-        if ($find_values) {
+        $bundle = registration_get_entity_registration_type('commerce_product',
+                    $line_item_wrapper->commerce_product->value());
+        if ($find_values &&
+          isset($form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i])) {
           // The entity exists already, so let's just load it from the
           // form_state.
           $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
-          $mail = $entity->mail;
         }
         elseif ($order_values && isset($order->data['register_entities'][$prodkey][$i])) {
           $entity = $order->data['register_entities'][$prodkey][$i];
-          $mail = $entity->mail;
         }
         else {
           // Entity doesn't exist, so we need to create a new registration.
-          $bundle = registration_get_entity_registration_type('commerce_product',
-                      $line_item_wrapper->commerce_product->value());
           $entity = commerce_registration_create_product_registration(
             $line_item_wrapper->commerce_product->product_id->value(),
             $bundle,
             $order->order_id
           );
         }
-        $form[$prodkey][$prodkey . '-reg-' . $i]['mail'] = array(
-          '#weight' => -50,
-          '#type' => ($user->uid != 0 && $hide_email ? 'hidden' : 'textfield'),
-          '#title' => t('Email Address'),
-          '#default_value' => $mail,
+        $mail = $entity->mail;
+        $options = registration_access_people($entity);
+        $form[$prodkey][$prodkey . '-reg-' . $i]['register_for'] = array(
+          '#type' => 'select',
+          '#title' => t('This registration is for:'),
+          '#options' => $options,
+          '#default_value' => isset($entity->register_for) ? $entity->register_for : NULL,
           '#required' => TRUE,
+          '#weight' => -50
+        );
+        $find_name = "registration_information[$prodkey][$prodkey-reg-$i][register_for]";
+        // If user can register other users.
+        $user_default = '';
+        if (isset($entity->register_for) &&
+          $entity->register_for == REGISTRATION_REGISTRANT_TYPE_USER) {
+          if (isset($entity->user)) {
+            $user_default = $entity->user;
+          }
+        }
+        $form[$prodkey][$prodkey . '-reg-' . $i]['user'] = array(
+          '#type' => 'textfield',
+          '#title' => t('User'),
+          '#default_value' => $user_default,
+          '#maxlength' => 60,
+          '#size' => 30,
+          '#description' => t('Select a user by typing their username to get a list of matches.'),
+          '#autocomplete_path' => 'user/autocomplete',
+          '#access' => isset($options[REGISTRATION_REGISTRANT_TYPE_USER]),
+          '#states' => array(
+            'visible' => array(
+              ':input[name="' . $find_name . '"]' => array('value' => REGISTRATION_REGISTRANT_TYPE_USER),
+            ),
+          ),
+        );
+        // If user can register anonymous emails.
+        $anon_default = '';
+        if (isset($entity->register_for) &&
+          $entity->register_for == REGISTRATION_REGISTRANT_TYPE_ANON) {
+          if (isset($entity->anon_mail)) {
+            $anon_default = $entity->anon_mail;
+          }
+        }
+        $form[$prodkey][$prodkey . '-reg-' . $i]['anon_mail'] = array(
+          '#weight' => -49,
+          '#type' => 'textfield',
+          '#title' => t('Email Address'),
+          '#default_value' => $anon_default,
+          '#access' => isset($options[REGISTRATION_REGISTRANT_TYPE_ANON]),
           '#parents' => array(
             'registration_information',
             $prodkey,
             $prodkey . '-reg-' . $i,
-            'email',
+            'anon_mail',
+          ),
+          '#states' => array(
+            'visible' => array(
+              ':input[name="' . $find_name .'"]' => array('value' => REGISTRATION_REGISTRANT_TYPE_ANON),
+            ),
           ),
         );
         // Attach the entity's fields to the form.
@@ -149,26 +189,61 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
-        $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['mail'];
-        if (registration_is_registered($entity, $mail)) {
-          form_set_error(
-            "registration_information][" . $prodkey . "]["
-                . $prodkey . "-reg-" . $i . "][mail",
-              t("The email address entered is already registered for this item.")
-          );
-          $ret = FALSE;
-        }
-        else {
-          if (in_array($mail, $emails)) {
-            form_set_error(
-              "registration_information][" . $prodkey . "]["
-                . $prodkey . "-reg-" . $i . "][mail",
-              t("Email addresses must be unique for each registrant."));
-            $ret = FALSE;
-          }
-          else {
-            $emails[] = $mail;
-          }
+        $type = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['register_for'];
+        $is_registered = FALSE;
+        switch ($type) {
+          case REGISTRATION_REGISTRANT_TYPE_ANON:
+            $mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['anon_mail'];
+            if (registration_is_registered($entity, $mail)) {
+              form_set_error(
+                "registration_information][" . $prodkey . "]["
+                    . $prodkey . "-reg-" . $i . "][anon_mail",
+                  t("The email address entered is already registered for this item.")
+              );
+              $ret = FALSE;
+            }
+            elseif (in_array($mail, $emails)) {
+              form_set_error(
+                "registration_information][" . $prodkey . "]["
+                  . $prodkey . "-reg-" . $i . "][anon_mail",
+                t("Email addresses must be unique for each registrant."));
+              $ret = FALSE;
+            }
+            else {
+              $emails[] = $mail;
+            }
+            break;
+          case REGISTRATION_REGISTRANT_TYPE_USER:
+            $account = user_load_by_name($form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['user']);
+            if (isset($account)) {
+              if (registration_is_registered($entity, NULL, $account->uid)) {
+                form_set_error(
+                  "registration_information][" . $prodkey . "]["
+                      . $prodkey . "-reg-" . $i . "][user",
+                  t("That user is already registered for this item.")
+                );
+                $ret = FALSE;
+              }
+            }
+            else {
+              form_set_error(
+                "registration_information][$prodkey][$prodkey-reg-$i][user",
+                t("Cannot find a user by that username.")
+              );
+              $ret = FALSE;
+            }
+            break;
+          case REGISTRATION_REGISTRANT_TYPE_ME:
+            global $user;
+            if (registration_is_registered($entity, NULL, $user->uid)) {
+              form_set_error(
+                "registration_information][" . $prodkey . "]["
+                    . $prodkey . "-reg-" . $i . "][register_for",
+                  t("You are already registered for this item.")
+              );
+              $ret = FALSE;
+            }
+            break;
         }
         // Let other modules do any field API validation if necessary.
         field_attach_form_validate(
@@ -200,6 +275,28 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = &$form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
+        $type = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['register_for'];
+        $is_registered = FALSE;
+        switch ($type) {
+          case REGISTRATION_REGISTRANT_TYPE_ANON:
+            $entity->mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['anon_mail'];
+            $entity->user_uid = 0;
+            $entity->user = '';
+            break;
+          case REGISTRATION_REGISTRANT_TYPE_USER:
+            $account = user_load_by_name($form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['user']);
+            $entity->mail = $account->mail;
+            $entity->user_uid = $account->uid;
+            $entity->anon_mail = '';
+            break;
+          case REGISTRATION_REGISTRANT_TYPE_ME:
+            global $user;
+            $entity->mail = $user->mail;
+            $entity->user_uid = $user->uid;
+            $entity->anon_mail = '';
+            $entity->user = '';
+            break;
+        }
         // Notify the field API that values were submitted.
         field_attach_submit(
           'registration',
@@ -325,7 +422,6 @@ function commerce_registration_create_product_registration($product_id, $bundle,
   $entity->created = REQUEST_TIME;
   $entity->updated = REQUEST_TIME;
   $entity->author_uid = $user->uid;
-  $entity->user_uid = $user->uid;
   $entity->order_id = $order_id;
   $entity->count = 1;
   return $entity;
