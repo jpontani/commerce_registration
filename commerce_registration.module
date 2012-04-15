@@ -135,7 +135,7 @@ function commerce_registration_hide_tab($node) {
     ->condition('nid', $node->nid)
     ->execute()
     ->fetchCol();
-  $node_settings = $node_settings[0];
+  $node_settings = (isset($node_settings[0]) ? $node_settings[0] : array());
   if (!is_array($node_settings)) {
     $node_settings = unserialize($node_settings);
   }
@@ -421,7 +421,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         ->condition('nid', $node->nid)
         ->execute()
         ->fetchCol();
-      $node_settings = $node_settings[0];
+      $node_settings = (isset($node_settings[0]) ? $node_settings[0] : array());
       if (!is_array($node_settings)) {
         $node_settings = unserialize($node_settings);
       }
