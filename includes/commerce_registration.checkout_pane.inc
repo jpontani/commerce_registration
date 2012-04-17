@@ -20,9 +20,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   $override_title = variable_get('commerce_registration_product_title', NULL);
   $hide_email = variable_get('commerce_registration_hide_email_logged_in', FALSE);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    $settings = registration_entity_settings('commerce_product', $id);
-    if (!empty($settings) && registration_status('commerce_product', $id, TRUE) == 1) {
+    $id = (int) $line_item_wrapper->commerce_product->product_id->value();
+    if (registration_status('commerce_product', $id, TRUE) == 1) {
       $show_form = TRUE;
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
@@ -180,9 +179,8 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $ret = TRUE;
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    $settings = registration_entity_settings('commerce_product', $id);
-    if (!empty($settings) && registration_status('commerce_product', $id, TRUE) == 1) {
+    $id = (int) $line_item_wrapper->commerce_product->product_id->value();
+    if (registration_status('commerce_product', $id, TRUE) == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $emails = array();
@@ -267,9 +265,8 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
   $order->data['register_entities'] = array();
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    $settings = registration_entity_settings('commerce_product', $id);
-    if (!empty($settings) && registration_status('commerce_product', $id, TRUE) == 1) {
+    $id = (int) $line_item_wrapper->commerce_product->product_id->value();
+    if (registration_status('commerce_product', $id, TRUE) == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
@@ -324,9 +321,8 @@ function commerce_registration_information_review($form, $form_state, $checkout_
   $msg = '';
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    $settings = registration_entity_settings('commerce_product', $id);
-    if (!empty($settings) && registration_status('commerce_product', $id, TRUE) == 1) {
+    $id = (int) $line_item_wrapper->commerce_product->product_id->value();
+    if (registration_status('commerce_product', $id, TRUE) == 1) {
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $msg .= '<em>' . $product->title->value() . ' ('
