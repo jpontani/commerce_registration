@@ -23,6 +23,7 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
       foreach ($entity->{$field['field_name']}['und'] as $product) {
         if (commerce_registration_product_has_registration_field($product['product_id'])) {
           $product = commerce_product_load($product['product_id']);
+          $settings = registration_entity_settings('commerce_product', $product->product_id);
           $prod = 'prod-' . check_plain($product->product_id);
           $form['settings'][$prod] = array(
             '#type' => 'fieldset',
@@ -35,7 +36,7 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
             '#collapsible' => TRUE,
             '#collapsed' => TRUE,
           );
-          $addform = registration_registrations_settings_form($form, $form_state, 'commerce_product', $product);
+          $addform = registration_entity_settings_form($form, $form_state, $settings, 'commerce_product', $product);
           unset($addform['save']);
           $addform['status']['#weight'] = -10;
           $addform['capacity']['#weight'] = -9;
@@ -51,9 +52,11 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
     }
   }
   if (empty($form)) {
-    $form = registration_registrations_settings_form($form, $form_state, $type, $entity);
-    $form['#submit'] = array('registration_registrations_settings_form_submit');
-    $form['#validate'] = array('registration_registrations_settings_form_validate');
+    list($entity_id) = entity_extract_ids($type, $entity);
+    $settings = registration_entity_settings($type, $entity_id);
+    $form = registration_entity_settings_form($form, $form_state, $settings, $type, $entity);
+    $form['#submit'] = array('registration_entity_settings_form_submit');
+    $form['#validate'] = array('registration_entity_settings_form_validate');
   }
   else {
     $form['submit'] = array(
@@ -79,7 +82,7 @@ function commerce_registration_node_registrations_settings_form_validate($form, 
       ),
       'values' => $settings,
     );
-    registration_registrations_settings_form_validate($form, $temp_form_state);
+    registration_entity_settings_form_validate($form, $temp_form_state);
   }
 }
 
@@ -96,7 +99,7 @@ function commerce_registration_node_registrations_settings_form_submit($form, &$
       ),
       'values' => $settings,
     );
-    registration_registrations_settings_form_submit(array(), $temp_form_state);
+    registration_entity_settings_form_submit(array(), $temp_form_state);
   }
 }
 

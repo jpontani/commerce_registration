@@ -351,7 +351,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
     $product = $form_state['commerce_product'];
     $settings = registration_entity_settings('commerce_product', $product->product_id);
     if (commerce_registration_product_has_registration_field($product->product_id)) {
-      if (!function_exists("registration_registrations_settings_form")) {
+      if (!function_exists("registration_entity_settings_form")) {
         module_load_include("inc", "registration", "/includes/registration.forms");
       }
       if (!function_exists("commerce_registration_registrations_settings_form_validate")) {
@@ -378,7 +378,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         ),
       );
       // Grab the registration settings form for this entity.
-      $addform = registration_registrations_settings_form(array(), $form_state, "commerce_product", $product);
+      $addform = registration_entity_settings_form(array(), $form_state, $settings, "commerce_product", $product);
       // Remove the save button for this form since we have one already.
       unset($addform['save']);
       // We rename the registration settings form's status field to be reg_status
