@@ -45,29 +45,20 @@ function commerce_registration_rules_condition_info() {
 function commerce_registration_rules_action_info() {
   $actions = array();
 
-  $actions['commerce_registration_mark_registrations_paid'] = array(
-    'label' => t('Mark Commerce Registrations as paid'),
+  $actions['commerce_registration_set_state'] = array(
+    'label' => t('Set all Registrations to a specific state'),
     'group' => t('Commerce Registration'),
     'parameter' => array(
       'commerce_order' => array(
         'type' => 'commerce_order',
         'label' => t('Commerce Order'),
-        'description' => t('The Commerce Order to mark all attached registrations as paid.'),
+        'description' => t('All registrations on this order will have their state changed.'),
       ),
-    ),
-    'callbacks' => array(
-      'execute' => 'commerce_registration_mark_paid',
-    ),
-  );
-
-  $actions['commerce_registration_cancel_registrations'] = array(
-    'label' => t('Cancel all Commerce Registrations'),
-    'group' => t('Commerce Registration'),
-    'parameter' => array(
-      'commerce_order' => array(
-        'type' => 'commerce_order',
-        'label' => t('Commerce Order'),
-        'description' => t('The Commerce Order to cancel all attached registrations'),
+      'registration_state' => array(
+        'type' => 'list<integer>',
+        'label' => t('Registration State'),
+        'description' => t('Registrations will be set to this state.'),
+        'options list' => 'commerce_registration_get_states',
       ),
     ),
   );
@@ -139,70 +130,32 @@ function commerce_registration_item_can_register($line_item) {
 /**
  * Action callback.
  *
- * Marks all registrations on a particular order as paid.
- *
- * @param CommerceOrder $order
- *   The Commerce Order object to mark all attached registrations as paid.
- *
- * @todo Custom status definitions.
+ * Sets all registrations on an order to a given state.
  */
-function commerce_registration_mark_paid($order) {
+function commerce_registration_set_state($order, $registration_state) {
   if (!isset($order->data['register_entities'])) {
     return;
   }
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     $id = $line_item_wrapper->commerce_product->product_id->value();
-    if (commerce_registration_item_can_register($line_item_wrapper->value())) {
-      $product = $line_item_wrapper->commerce_product;
-      if (!isset($order->data['register_entities']['prod-' . $product->sku->value()])) {
-        // If we have no registration entities for this product in our order's
-        // data array, we skip to the next.
+    $product = $line_item_wrapper->commerce_product;
+    if (!isset($order->data['register_entities']['prod-' . $product->sku->value()])) {
+      // If we have no registration entities for this product in our order's
+      // data array, we skip to the next.
+      continue;
+    }
+    $quantity = (int) $line_item_wrapper->quantity->value();
+    for ($i = 0; $i < $quantity; $i++) {
+      if (!isset($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
+        // If this registration doesn't exist in our data array, skip to the
+        // next entry.
         continue;
       }
-      $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i = 0; $i < $quantity; $i++) {
-        if (!isset($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
-          // If this registration doesn't exist in our data array, skip to the
-          // next entry.
-          continue;
-        }
-        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        registration_save($entity);
-      }
-    }
-  }
-}
-
-/**
- * Action callback.
- *
- * Cancels all registrations on a particular order.
- *
- * @param CommerceOrder $order
- *   The Commerce Order object to cancel all attached registrations.
- */
-function commerce_registration_cancel_registrations($order) {
-  // Only cancel registrations if they actually exist.
-  if (!isset($order->data['register_entities'])) {
-    return;
-  }
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    if (commerce_registration_item_can_register($line_item_wrapper->value())) {
-      $product = $line_item_wrapper->commerce_product;
-      $quantity = (int) $line_item_wrapper->quantity->value();
-      for ($i = 0; $i < $quantity; $i++) {
-        $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-        if (!isset($entity->registration_id) || $entity->registration_id == 0) {
-          // If the registration_id is not valid, skip this one.
-          continue;
-        }
-        // Notify field api that the entity was deleted.
-        field_attach_delete('registration', $entity);
-        entity_delete('registration', $entity->registration_id);
-      }
+      $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+      $key = array_keys($registration_state);
+      $entity->state = (int) $registration_state[$key[0]];
+      $entity->save();
     }
   }
 }
@@ -210,3 +163,14 @@ function commerce_registration_cancel_registrations($order) {
 /**
  * @} End of "defgroup commerce_registration_rules_actions".
  */
+
+/**
+ * Rules helper. Return options list of registration states.
+ */
+function commerce_registration_get_states() {
+  $states = registration_states();
+  foreach ($states as $id => $state) {
+    $options[$id] = $state->label;
+  }
+  return $options;
+}

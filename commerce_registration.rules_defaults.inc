@@ -8,11 +8,27 @@
  * Implements hook_default_rules_configuration().
  */
 function commerce_registration_default_rules_configuration() {
-  $rule = rules_reaction_rule();
-  $rule->label = "Mark registrations as confirmed upon full payment";
-  $rule->active = TRUE;
-  $rule->event('commerce_payment_order_paid_in_full')
-    ->action('commerce_registration_mark_registrations_paid', array('commerce_order:select' => "commerce_order"));
+  $rule1 = rules_reaction_rule();
+  $rule1->label = "Set Registrations to Pending upon Order Completion";
+  $rule1->active = TRUE;
+  $rule1->event('commerce_checkout_complete')
+    ->action('commerce_registration_set_state', array(
+      'commerce_order:select' => "commerce_order",
+      'registration_state' => 2,
+    )
+  );
+  $rule2 = rules_reaction_rule();
+  $rule2->label = "Set Registrations to Complete upon Full Payment";
+  $rule2->active = TRUE;
+  $rule2->event('commerce_payment_order_paid_in_full')
+    ->action('commerce_registration_set_state', array(
+      'commerce_order:select' => "commerce_order",
+      'registration_state' => 1,
+    )
+  );
 
-  return array('commerce_registration_paid_in_full' => $rule);
+  return array(
+    'commerce_registration_pending_upon_order_completion' => $rule1,
+    'commerce_registration_complete_upon_full_payment' => $rule2,
+  );
 }
