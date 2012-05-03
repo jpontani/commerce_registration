@@ -709,10 +709,10 @@ function theme_commerce_registration_order($variables) {
       'specifier' => 'user'
     ),
     array(
-      'data' => t('Created By'),
-      'field' => 'author_uid',
+      'data' => t('Product'),
+      'field' => 'entity',
       'type' => 'property',
-      'specifier' => 'author_uid'
+      'specifier' => 'entity'
     ),
     array(
       'data' => t('Count'),
@@ -740,12 +740,12 @@ function theme_commerce_registration_order($variables) {
   $rows = array();
 
   foreach ($variables['registrations'] as $registration) {
-    $author_col = '';
-    if ($registration->author_uid) {
-      $author = user_load($registration->author_uid);
-      $uri = entity_uri('user', $author);
-      $author_col = l($author->name, $uri['path']);
-    }
+    $host_entity_type_info = entity_get_info($registration->entity_type);
+    $host_entity = entity_load_single($registration->entity_type, $registration->entity_id);
+    list(, , $host_entity_bundle) = entity_extract_ids($registration->entity_type, $host_entity);
+
+    $host_label = entity_label($registration->entity_type, $host_entity);
+    $host_uri = entity_uri($registration->entity_type, $host_entity);
 
     $user_col = '';
     if ($registration->user_uid) {
@@ -758,7 +758,7 @@ function theme_commerce_registration_order($variables) {
       l($registration->registration_id, 'registration/' . $registration->registration_id),
       l($registration->mail, 'mailto:' . $registration->mail),
       $user_col,
-      $author_col,
+      l($host_label, $host_uri['path']),
       $registration->count,
       format_date($registration->created),
       entity_label('registration_state', $registration->state)
