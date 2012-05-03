@@ -103,6 +103,19 @@ function commerce_registration_menu_alter(&$menu) {
 }
 
 /**
+ * Implements hook_theme().
+ */
+function commerce_registration_theme($existing, $type, $theme, $path) {
+  return array(
+    'commerce_registration_order' => array(
+      'variables' => array(
+        'registrations' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
  * Access callback.
  * Callback for modifying settings and sending emails for a given product
  *  display.
@@ -587,7 +600,7 @@ function commerce_registration_theme_registry_alter(&$registry) {
  */
 function theme_registration_with_order($variables) {
   $registration = $variables['registration'];
-  $output = theme_registration($variables);
+  $output = theme('registration', $variables);
   if (isset($registration->order_id) && $registration->order_id != 0) {
     $order = commerce_order_load($registration->order_id);
     $path = 'user/' . $order->uid . '/orders/' . $order->order_id;
@@ -599,6 +612,35 @@ function theme_registration_with_order($variables) {
   }
 
   return $output;
+}
+
+/**
+ * Implements hook_commerce_checkout_complete().
+ */
+function commerce_registration_commerce_checkout_complete($order) {
+  if (!isset($order->data['register_entities'])) {
+    return;
+  }
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    $id = $line_item_wrapper->commerce_product->product_id->value();
+    $product = $line_item_wrapper->commerce_product;
+    if (!isset($order->data['register_entities']['prod-' . $product->sku->value()])) {
+      // If we have no registration entities for this product in our order's
+      // data array, we skip to the next.
+      continue;
+    }
+    $quantity = (int) $line_item_wrapper->quantity->value();
+    for ($i = 0; $i < $quantity; $i++) {
+      if (!isset($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
+        // If this registration doesn't exist in our data array, skip to the
+        // next entry.
+        continue;
+      }
+      $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
+      registration_save($entity);
+    }
+  }
 }
 
 /**
@@ -619,4 +661,113 @@ function commerce_registration_product_has_registration_field($product_id) {
     }
   }
   return FALSE;
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function commerce_registration_entity_view_alter(&$build, $type) {
+  if ($type == "commerce_order") {
+    $regs = db_select('registration', 'r')
+      ->fields('r', array('registration_id'))
+      ->condition('order_id', $build['#entity']->order_id)
+      ->execute();
+    $build['commerce_registration'] = array(
+      '#title' => t('Registrations'),
+    );
+    $variables['registrations'] = array();
+    foreach ($regs as $row) {
+      $variables['registrations'][] = registration_load($row->registration_id);
+    }
+    if (!empty($variables['registrations'])) {
+      $build['commerce_registration'][0]['#markup'] = theme('commerce_registration_order', $variables);
+    }
+  }
+}
+
+/**
+ * Theme the registrations for viewing on a user's order view page.
+ */
+function theme_commerce_registration_order($variables) {
+  $header = array(
+    array(
+      'data' => t('id'),
+      'field' => 'registration_id',
+      'type' => 'property',
+      'specifier' => 'registration_id'
+    ),
+    array(
+      'data' => t('Email'),
+      'field' => 'mail',
+      'type' => 'property',
+      'specifier' => 'mail'
+    ),
+    array(
+      'data' => t('User'),
+      'field' => 'user_uid',
+      'type' => 'property',
+      'specifier' => 'user'
+    ),
+    array(
+      'data' => t('Created By'),
+      'field' => 'author_uid',
+      'type' => 'property',
+      'specifier' => 'author_uid'
+    ),
+    array(
+      'data' => t('Count'),
+      'field' => 'count',
+      'type' => 'property',
+      'specifier' => 'count'
+    ),
+    array(
+      'data' => t('Created'),
+      'field' => 'created',
+      'sort' => 'desc',
+      'type' => 'property',
+      'specifier' => 'created'
+    ),
+    array(
+      'data' => t('State'),
+      'field' => 'state',
+      'type' => 'property',
+      'specifier' => 'state'
+    ),
+  );
+  $title = "<div class='commerce-registration registration-list'><h2>";
+  $title .= t('Registrations');
+  $title .= "</h2>";
+  $rows = array();
+
+  foreach ($variables['registrations'] as $registration) {
+    $author_col = '';
+    if ($registration->author_uid) {
+      $author = user_load($registration->author_uid);
+      $uri = entity_uri('user', $author);
+      $author_col = l($author->name, $uri['path']);
+    }
+
+    $user_col = '';
+    if ($registration->user_uid) {
+      $user = user_load($registration->user_uid);
+      $uri = entity_uri('user', $user);
+      $user_col = l($user->name, $uri['path']);
+    }
+
+    $rows[] = array(
+      l($registration->registration_id, 'registration/' . $registration->registration_id),
+      l($registration->mail, 'mailto:' . $registration->mail),
+      $user_col,
+      $author_col,
+      $registration->count,
+      format_date($registration->created),
+      entity_label('registration_state', $registration->state)
+    );
+  }
+  $table = array(
+    'header' => $header,
+    'rows' => $rows
+  );
+
+  return $title . theme('table', $table) . theme('pager') . "</div>";
 }

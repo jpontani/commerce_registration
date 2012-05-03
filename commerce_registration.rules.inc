@@ -133,30 +133,15 @@ function commerce_registration_item_can_register($line_item) {
  * Sets all registrations on an order to a given state.
  */
 function commerce_registration_set_state($order, $registration_state) {
-  if (!isset($order->data['register_entities'])) {
-    return;
-  }
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    $id = $line_item_wrapper->commerce_product->product_id->value();
-    $product = $line_item_wrapper->commerce_product;
-    if (!isset($order->data['register_entities']['prod-' . $product->sku->value()])) {
-      // If we have no registration entities for this product in our order's
-      // data array, we skip to the next.
-      continue;
-    }
-    $quantity = (int) $line_item_wrapper->quantity->value();
-    for ($i = 0; $i < $quantity; $i++) {
-      if (!isset($order->data['register_entities']['prod-' . $product->sku->value()][$i])) {
-        // If this registration doesn't exist in our data array, skip to the
-        // next entry.
-        continue;
-      }
-      $entity = $order->data['register_entities']['prod-' . $product->sku->value()][$i];
-      $key = array_keys($registration_state);
-      $entity->state = (int) $registration_state[$key[0]];
-      $entity->save();
-    }
+  $regs = db_select('registration', 'r')
+    ->fields('r')
+    ->condition('order_id', $order->order_id)
+    ->execute();
+  foreach ($regs as $row) {
+    $registration = registration_load($row->registration_id);
+    $key = array_keys($registration_state);
+    $registration->state = (int) $registration_state[$key[0]];
+    registration_save($registration);
   }
 }
 
