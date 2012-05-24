@@ -111,6 +111,7 @@ function commerce_registration_theme($existing, $type, $theme, $path) {
       'variables' => array(
         'registrations' => NULL,
       ),
+      'file' => '/includes/commerce_registration.theme.inc',
     ),
   );
 }
@@ -365,10 +366,10 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
     $settings = registration_entity_settings('commerce_product', $product->product_id);
     if (commerce_registration_product_has_registration_field($product->product_id)) {
       if (!function_exists("registration_entity_settings_form")) {
-        module_load_include("inc", "registration", "/includes/registration.forms");
+        module_load_include("inc", "registration", "includes/registration.forms");
       }
       if (!function_exists("commerce_registration_registrations_settings_form_validate")) {
-        module_load_include("inc", "commerce_registration", "/includes/commerce_registration.forms");
+        module_load_include("inc", "commerce_registration", "includes/commerce_registration.forms");
       }
       // Add validation and submission handlers to the form.
       $form['#validate'][] = "commerce_registration_registration_settings_form_validate";
@@ -581,40 +582,6 @@ function commerce_registration_entity_info_alter(&$info) {
 }
 
 /**
- * Implements hook_theme_registry_alter().
- */
-function commerce_registration_theme_registry_alter(&$registry) {
-  // We change the default registration theme function to our custom one to be
-  // able to add the Commerce Order ID to the view.
-  if (!empty($registry['registration']['function'])) {
-    $registry['registration']['theme path'] = drupal_get_path('module', 'commerce_registration');
-    $registry['registration']['function'] = 'theme_registration_with_order';
-  }
-}
-
-/**
- * Overridden theme handler for registrations.
- *
- * @param array $variables
- *   Contains a complete registration object.
- */
-function theme_registration_with_order($variables) {
-  $registration = $variables['registration'];
-  $output = theme('registration', $variables);
-  if (isset($registration->order_id) && $registration->order_id != 0) {
-    $order = commerce_order_load($registration->order_id);
-    $path = 'user/' . $order->uid . '/orders/' . $order->order_id;
-    if (user_access('administer commerce order entities')) {
-      $path = 'admin/commerce/orders/' . $order->order_id;
-    }
-    $text = t('Order #@order', array('@order' => $order->order_id));
-    $output .= '<div><label>' . t('Order') . '</label>' . l($text, $path) . '</div>';
-  }
-
-  return $output;
-}
-
-/**
  * Implements hook_commerce_checkout_complete().
  */
 function commerce_registration_commerce_checkout_complete($order) {
@@ -668,6 +635,7 @@ function commerce_registration_product_has_registration_field($product_id) {
  */
 function commerce_registration_entity_view_alter(&$build, $type) {
   if ($type == "commerce_order") {
+    // If we're viewing an order, add registrations to the order if available.
     $regs = db_select('registration', 'r')
       ->fields('r', array('registration_id'))
       ->condition('order_id', $build['#entity']->order_id)
@@ -683,91 +651,11 @@ function commerce_registration_entity_view_alter(&$build, $type) {
       $build['commerce_registration'][0]['#markup'] = theme('commerce_registration_order', $variables);
     }
   }
-}
-
-/**
- * Theme the registrations for viewing on a user's order view page.
- */
-function theme_commerce_registration_order($variables) {
-  $header = array(
-    array(
-      'data' => t('id'),
-      'field' => 'registration_id',
-      'type' => 'property',
-      'specifier' => 'registration_id'
-    ),
-    array(
-      'data' => t('Email'),
-      'field' => 'mail',
-      'type' => 'property',
-      'specifier' => 'mail'
-    ),
-    array(
-      'data' => t('User'),
-      'field' => 'user_uid',
-      'type' => 'property',
-      'specifier' => 'user'
-    ),
-    array(
-      'data' => t('Product'),
-      'field' => 'entity',
-      'type' => 'property',
-      'specifier' => 'entity'
-    ),
-    array(
-      'data' => t('Count'),
-      'field' => 'count',
-      'type' => 'property',
-      'specifier' => 'count'
-    ),
-    array(
-      'data' => t('Created'),
-      'field' => 'created',
-      'sort' => 'desc',
-      'type' => 'property',
-      'specifier' => 'created'
-    ),
-    array(
-      'data' => t('State'),
-      'field' => 'state',
-      'type' => 'property',
-      'specifier' => 'state'
-    ),
-  );
-  $title = "<div class='commerce-registration registration-list'><h2>";
-  $title .= t('Registrations');
-  $title .= "</h2>";
-  $rows = array();
-
-  foreach ($variables['registrations'] as $registration) {
-    $host_entity_type_info = entity_get_info($registration->entity_type);
-    $host_entity = entity_load_single($registration->entity_type, $registration->entity_id);
-    list(, , $host_entity_bundle) = entity_extract_ids($registration->entity_type, $host_entity);
-
-    $host_label = entity_label($registration->entity_type, $host_entity);
-    $host_uri = entity_uri($registration->entity_type, $host_entity);
-
-    $user_col = '';
-    if ($registration->user_uid) {
-      $user = user_load($registration->user_uid);
-      $uri = entity_uri('user', $user);
-      $user_col = l($user->name, $uri['path']);
-    }
-
-    $rows[] = array(
-      l($registration->registration_id, 'registration/' . $registration->registration_id),
-      l($registration->mail, 'mailto:' . $registration->mail),
-      $user_col,
-      l($host_label, $host_uri['path']),
-      $registration->count,
-      format_date($registration->created),
-      entity_label('registration_state', $registration->state)
+  else if ($type == "registration") {
+    // Add the Commerce Order to the registration view.
+    $vars = array(
+      '!num' => $build['#entity']->order_id,
     );
+    $build['commerce_registration_order'][0]['#markup'] = l(t('Order !num', $vars), 'admin/commerce/orders/' . $build['#entity']->order_id);
   }
-  $table = array(
-    'header' => $header,
-    'rows' => $rows
-  );
-
-  return $title . theme('table', $table) . theme('pager') . "</div>";
 }
