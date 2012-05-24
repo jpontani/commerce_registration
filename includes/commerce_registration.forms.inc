@@ -11,7 +11,7 @@
 function commerce_registration_node_registrations_settings_form($form, &$form_state, $type, $entity) {
   // Loop through all products on the entity and add the settings form to a
   // fieldset.
-  module_load_include('inc', 'registration', '/includes/registration.forms');
+  module_load_include('inc', 'registration', 'includes/registration.forms');
   $form = array();
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
   foreach ($fields as $field) {
@@ -46,7 +46,7 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
             ),
           );
           $form['settings'][$prod] += $addform;
-          $form['settings'][$prod]['reminder']['#parents'] = array('settings', $prod);
+          $form['settings'][$prod]['reminder']['#parents'] = array('settings', $prod, 'reminder');
         }
       }
     }
@@ -109,7 +109,7 @@ function commerce_registration_node_registrations_settings_form_submit($form, &$
 function commerce_registration_registrations_broadcast_form($form, &$form_state, $type, $entity) {
   // Loop through all products on the entity and add the broadcast form to a
   // fieldset.
-  module_load_include('inc', 'registration', '/includes/registration.forms');
+  module_load_include('inc', 'registration', 'includes/registration.forms');
   $form = array();
   $all = array(0 => 'All Product Registrants');
   $products = array();
@@ -183,7 +183,7 @@ function commerce_registration_registration_settings_form_validate($form, $form_
   $temp_form_state = array('values' => $form_state['values']['registration_settings']);
   $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
   if (!function_exists('registration_registrations_settings_form_validate')) {
-    module_load_include('inc', 'registration', '/includes/registration.forms');
+    module_load_include('inc', 'registration', 'includes/registration.forms');
   }
   return registration_registrations_settings_form_validate($form, $temp_form_state);
 }
