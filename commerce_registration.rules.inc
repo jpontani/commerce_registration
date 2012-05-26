@@ -85,6 +85,9 @@ function commerce_registration_rules_action_info() {
  */
 function commerce_registration_order_has_registration($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    return FALSE;
+  }
   $id = $line_item_wrapper->commerce_product->product_id->value();
   $settings = registration_entity_settings('commerce_product', $id);
   return !empty($settings);
@@ -104,6 +107,9 @@ function commerce_registration_order_has_registration($line_item) {
  */
 function commerce_registration_item_can_register($line_item) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    return FALSE;
+  }
   $id = $line_item_wrapper->commerce_product->product_id->value();
   $settings = registration_entity_settings('commerce_product', $id);
   if (empty($settings)) {

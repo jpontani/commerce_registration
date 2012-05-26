@@ -590,6 +590,9 @@ function commerce_registration_commerce_checkout_complete($order) {
   }
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if (!property_exists($line_item_wrapper, 'commerce_product')) {
+      continue;
+    }
     $id = $line_item_wrapper->commerce_product->product_id->value();
     $product = $line_item_wrapper->commerce_product;
     if (!isset($order->data['register_entities']['prod-' . $product->sku->value()])) {
