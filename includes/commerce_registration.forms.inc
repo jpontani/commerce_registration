@@ -11,7 +11,7 @@
 function commerce_registration_node_registrations_settings_form($form, &$form_state, $type, $entity) {
   // Loop through all products on the entity and add the settings form to a
   // fieldset.
-  module_load_include('inc', 'registration', 'includes/registration.forms');
+  form_load_include($form_state, 'inc', 'registration', 'includes/registration.forms');
   $form = array();
   $fields = field_read_fields(array('type' => 'commerce_product_reference'));
   foreach ($fields as $field) {
@@ -109,7 +109,7 @@ function commerce_registration_node_registrations_settings_form_submit($form, &$
 function commerce_registration_registrations_broadcast_form($form, &$form_state, $type, $entity) {
   // Loop through all products on the entity and add the broadcast form to a
   // fieldset.
-  module_load_include('inc', 'registration', 'includes/registration.forms');
+  form_load_include($form_state, 'inc', 'registration', 'includes/registration.forms');
   $form = array();
   $all = array(0 => 'All Product Registrants');
   $products = array();
@@ -180,12 +180,12 @@ function commerce_registration_registrations_broadcast_form_submit($form, &$form
  * New registration settings validation handler to use with Commerce Products.
  */
 function commerce_registration_registration_settings_form_validate($form, $form_state) {
+  if (!function_exists('registration_entity_settings_form_validate')) {
+    form_load_include($form_state, 'inc', 'registration', 'includes/registration.forms');
+  }
   $temp_form_state = array('values' => $form_state['values']['registration_settings']);
   $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
-  if (!function_exists('registration_registrations_settings_form_validate')) {
-    module_load_include('inc', 'registration', 'includes/registration.forms');
-  }
-  return registration_registrations_settings_form_validate($form, $temp_form_state);
+  return registration_entity_settings_form_validate($form, $temp_form_state);
 }
 
 /**
@@ -201,5 +201,5 @@ function commerce_registration_registration_settings_form_submit($form, &$form_s
     'values' => $form_state['values']['registration_settings'],
   );
   $temp_form_state['values']['status'] = $temp_form_state['values']['reg_status'];
-  registration_registrations_settings_form_submit($form, $temp_form_state);
+  registration_entity_settings_form_submit($form, $temp_form_state);
 }

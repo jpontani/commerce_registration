@@ -20,7 +20,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   $override_title = variable_get('commerce_registration_product_title', NULL);
   $hide_email = variable_get('commerce_registration_hide_email_logged_in', FALSE);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    if (!in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
       continue;
     }
     $id = (int) $line_item_wrapper->commerce_product->product_id->value();
@@ -182,7 +182,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $ret = TRUE;
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    if (!in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
       continue;
     }
     $id = (int) $line_item_wrapper->commerce_product->product_id->value();
@@ -271,7 +271,7 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
   $order->data['register_entities'] = array();
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    if (!in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
       continue;
     }
     $id = (int) $line_item_wrapper->commerce_product->product_id->value();
@@ -330,7 +330,7 @@ function commerce_registration_information_review($form, $form_state, $checkout_
   $msg = '';
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    if (!in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
       continue;
     }
     $id = (int) $line_item_wrapper->commerce_product->product_id->value();

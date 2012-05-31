@@ -365,11 +365,11 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
     $product = $form_state['commerce_product'];
     $settings = registration_entity_settings('commerce_product', $product->product_id);
     if (commerce_registration_product_has_registration_field($product->product_id)) {
-      if (!function_exists("registration_entity_settings_form")) {
-        module_load_include("inc", "registration", "includes/registration.forms");
+      if (!function_exists("registration_entity_settings_form_validate")) {
+        form_load_include($form_state,'inc', 'registration', 'includes/registration.forms');
       }
-      if (!function_exists("commerce_registration_registrations_settings_form_validate")) {
-        module_load_include("inc", "commerce_registration", "includes/commerce_registration.forms");
+      if (!function_exists("commerce_registration_registration_settings_form_validate")) {
+        form_load_include($form_state,'inc', 'commerce_registration', 'includes/commerce_registration.forms');
       }
       // Add validation and submission handlers to the form.
       $form['#validate'][] = "commerce_registration_registration_settings_form_validate";
@@ -406,7 +406,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
       }
       // Add the registration settings form to the base form.
       $form['registration_settings'] += $addform;
-      $form['registration_settings']['reminder']['#parents'] = array('registration_settings');
+      $form['registration_settings']['reminder']['#parents'] = array('registration_settings', 'reminder');
       $form['registration_settings']['reminder']['reminder_settings']['#states']['visible'] = array(
         ':input[name="registration_settings[send_reminder]"]' => array(
           'checked' => TRUE,
@@ -590,7 +590,7 @@ function commerce_registration_commerce_checkout_complete($order) {
   }
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-    if (!property_exists($line_item_wrapper, 'commerce_product')) {
+    if (!in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
       continue;
     }
     $id = $line_item_wrapper->commerce_product->product_id->value();
