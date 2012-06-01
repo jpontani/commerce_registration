@@ -175,15 +175,24 @@ function commerce_registration_registration_page($type, $node) {
       }
     }
   }
+  $hasRegField = FALSE;
+  $fields = field_read_fields(array('type' => 'registration'));
+  foreach ($fields as $field) {
+    if (isset($node->{$field['field_name']})) {
+      $hasRegField = TRUE;
+    }
+  }
   if (!empty($prodids)) {
     foreach ($prodids as $product_id) {
       $prod = commerce_product_load($product_id);
       $out .= "<div class='commerce-product commerce-product-$product_id'>"
-              . registration_registrations_page('commerce_product', $prod) . "</div>";
+              . registration_registrations_page('commerce_product', $prod) . "</div><hr>";
     }
   }
-  else {
-    $out = registration_registrations_page($type, $node);
+  if ($hasRegField) {
+    $out .= "<div class='registration'>";
+    $out .= registration_registrations_page($type, $node);
+    $out .= "</div>";
   }
   return $out;
 }
