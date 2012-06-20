@@ -205,12 +205,13 @@ function commerce_registration_commerce_checkout_page_info() {
   $pages['registration'] = array(
     'name' => t('Registration'),
     'title' => t('Registration Information'),
-    'weight' => 1,
+    'weight' => -1,
     'status_cart' => TRUE,
     'buttons' => TRUE,
   );
   return $pages;
 }
+
 /**
  * Implements hook_commerce_checkout_pane_info().
  */
