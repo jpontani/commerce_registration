@@ -130,8 +130,9 @@ function commerce_registration_administer_registrations_access($type, $node) {
       foreach ($node->{$field['field_name']} as $product) {
         $product = commerce_product_load($product[0]['product_id']);
         if (registration_get_entity_registration_type('commerce_product', $product) && !commerce_registration_hide_tab($node)) {
-          if (user_access('administer registration')) {
-            return TRUE;
+          $registration_type = registration_get_entity_registration_type('commerce_product', $product);
+          if ($registration_type && !commerce_registration_hide_tab($node)) {
+            return user_access('administer registration') || user_access("administer $registration_type registration");
           }
         }
       }
