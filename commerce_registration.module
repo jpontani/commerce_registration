@@ -505,6 +505,8 @@ function commerce_registration_entity_property_info_alter(&$info) {
   $info['registration']['properties']['order_id'] = array(
     'label' => t('Order ID'),
     'type' => 'integer',
+    'schema field' => 'order_id',
+    'setter callback' => 'entity_property_verbatim_set',
     'description' => t('The order ID associated with this registration.'),
   );
 }
