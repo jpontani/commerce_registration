@@ -161,28 +161,6 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['registration_id']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['registration_id']['separator'] = '';
   $handler->display->display_options['fields']['registration_id']['format_plural'] = 0;
-  /* Field: Registration: Mail */
-  $handler->display->display_options['fields']['mail']['id'] = 'mail';
-  $handler->display->display_options['fields']['mail']['table'] = 'registration';
-  $handler->display->display_options['fields']['mail']['field'] = 'mail';
-  $handler->display->display_options['fields']['mail']['label'] = 'Email';
-  $handler->display->display_options['fields']['mail']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['make_link'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['absolute'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['external'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['replace_spaces'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['trim_whitespace'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['nl2br'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['mail']['alter']['ellipsis'] = 1;
-  $handler->display->display_options['fields']['mail']['alter']['strip_tags'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['mail']['alter']['html'] = 0;
-  $handler->display->display_options['fields']['mail']['element_label_colon'] = 0;
-  $handler->display->display_options['fields']['mail']['element_default_classes'] = 1;
-  $handler->display->display_options['fields']['mail']['hide_empty'] = 0;
-  $handler->display->display_options['fields']['mail']['empty_zero'] = 0;
-  $handler->display->display_options['fields']['mail']['hide_alter_empty'] = 1;
   /* Field: Registration: Created */
   $handler->display->display_options['fields']['created']['id'] = 'created';
   $handler->display->display_options['fields']['created']['table'] = 'registration';
