@@ -56,6 +56,8 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         }
         elseif ($order_values && isset($order->data['register_entities'][$prodkey][$i])) {
+          // The entity is not in form_state, but is in the order data, so we
+          // load it from there instead.
           $entity = $order->data['register_entities'][$prodkey][$i];
         }
         else {
@@ -100,7 +102,15 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             ),
           ),
         );
-        // If user can register anonymous emails.
+        if (count($options) == 1 && isset($options[REGISTRATION_REGISTRANT_TYPE_ME]) {
+          // User only has the option to register SELF.
+          $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#type'] = 'hidden';
+          $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#value'] = REGISTRATION_REGISTRANT_TYPE_SELF;
+        }
+        // If user can register anonymous emails, then set the default value
+        // of the anonymous email box to the current entity's value.
+        // This allows users to go forward and backward in the checkout process
+        // without losing any registrant information.
         $anon_default = '';
         if (isset($entity->register_for) &&
           $entity->register_for == REGISTRATION_REGISTRANT_TYPE_ANON) {
