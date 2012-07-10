@@ -190,6 +190,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $product = $line_item_wrapper->commerce_product;
       $quantity = (int) $line_item_wrapper->quantity->value();
       $emails = array();
+      $self_products = array();
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
         $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
@@ -246,6 +247,18 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
                   t("You are already registered for this item.")
               );
               $ret = FALSE;
+            }
+            if (isset($self_products[$product->product_id])
+              && $self_products[$product->product_id] == $user->uid) {
+              form_set_error("registration_information][" . $prodkey . "]["
+                    . $prodkey . "-reg-" . $i . "][register_for",
+                t("You cannot register yourself for the same item more than once."));
+              $ret = FALSE;
+            }
+            else {
+              // Set a flag that the current user is registering 'self' for
+              // this product.
+              $self_products[$product->product_id] = $user->uid;
             }
             break;
         }
