@@ -675,3 +675,77 @@ function commerce_registration_entity_view_alter(&$build, $type) {
     $build['commerce_registration_order'][0]['#markup'] = l(t('Order !num', $vars), 'admin/commerce/orders/' . $build['#entity']->order_id);
   }
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_registration_form_commerce_order_ui_order_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form_state['values']['commerce_line_items'])) {
+    $form['registration_settings'] = array(
+      '#type' => 'fieldset',
+      '#collapsible' => FALSE,
+      '#title' => t('Registration Settings'),
+      '#weight' => -6,
+    );
+    $products = array();
+    foreach ($form_state['values']['commerce_line_items'] as $lang => $items) {
+      foreach ($items as $index => $data) {
+        $line_item = commerce_line_item_load((int) $data['line_item_id']);
+        $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+        $product_id = $line_item_wrapper->commerce_product->product_id->value();
+        if (in_array($product_id, array_keys($products))) {
+          $products[$product_id]++;
+        }
+        else {
+          $products[$product_id] = 1;
+        }
+      }
+    }
+    $override_title = variable_get('commerce_registration_product_title', NULL);
+    $settings_form = array();
+    $show_settings = FALSE;
+    foreach ($products as $product_id => $quantity) {
+      if (registration_status('commerce_product', $product_id, TRUE) == 1) {
+        $product = commerce_product_load((int) $product_id);
+        $product = entity_metadata_wrapper('commerce_product', $product);
+        $show_settings = TRUE;
+        $title = check_plain($product->title->value() . ' - Registrant #' . $label);
+        for ($i = 0; $i < $quantity; $i++) {
+          if (isset($override_title)) {
+            $label = $i + 1;
+            $title = str_replace('[title]', $product->title->value(), $override_title);
+            $title = str_replace('[index]', $label, $title);
+          }
+          $form['registration_settings']['prod-' . $product_id . '-' . $i] = array(
+            '#type' => 'fieldset',
+            '#collapsible' => TRUE,
+            '#collapsed' => TRUE,
+            '#title' => $title,
+            '#tree' => TRUE,
+            '#description' => variable_get('commerce_registration_registrant_help', ''),
+          );
+          $bundle = registration_get_entity_registration_type('commerce_product',
+            $product->value());
+          if (!function_exists('commerce_registration_create_product_registration')) {
+            module_load_include('inc', 'commerce_registration', 'includes/commerce_registration.checkout_pane');
+          }
+          $entity = commerce_registration_create_product_registration(
+            $product_id,
+            $bundle,
+            0
+          );
+          field_attach_form(
+            'registration',
+            $entity,
+            $form['registration_settings']['prod-' . $product_id . '-' . $i],
+            $form_state
+          );
+        }
+      }
+    }
+    if (!$show_settings) {
+      unset($form['registration_settings']);
+    }
+    dsm($form);
+  }
+}

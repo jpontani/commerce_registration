@@ -70,6 +70,16 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         }
         $mail = $entity->mail;
         $options = registration_access_people($entity);
+        if (count($options) == 0) {
+          $form[$prodkey][$prodkey . '-reg-' . $i]['no_reg'] = array(
+            '#markup' => t('You do not have permission to register for this item.'),
+          );
+          $form[$prodkey][$prodkey . '-reg-' . $i]['no_reg_permission'] = array(
+            '#type' => 'hidden',
+            '#value' => TRUE,
+          );
+          return $form;
+        }
         $form[$prodkey][$prodkey . '-reg-' . $i]['register_for'] = array(
           '#type' => 'select',
           '#title' => t('This registration is for:'),
@@ -102,7 +112,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             ),
           ),
         );
-        if (count($options) == 1 && isset($options[REGISTRATION_REGISTRANT_TYPE_ME]) {
+        if (count($options) == 1 && isset($options[REGISTRATION_REGISTRANT_TYPE_ME])) {
           // User only has the option to register SELF.
           $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#type'] = 'hidden';
           $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#value'] = REGISTRATION_REGISTRANT_TYPE_SELF;
@@ -203,6 +213,13 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $self_products = array();
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
+        if (isset($form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['no_reg_permission'])) {
+          form_set_error("registration_information][" . $prodkey . "]["
+              . $prodkey . "-reg-" . $i . "][no_reg",
+            t("Unable to continue, you are unable to register for this item. Please remove it from your cart."));
+            $ret = FALSE;
+          continue;
+        }
         $entity = $form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         $type = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['register_for'];
         $is_registered = FALSE;
@@ -303,6 +320,9 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
       $quantity = (int) $line_item_wrapper->quantity->value();
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
+        if (isset($form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['no_reg_permission'])) {
+          continue;
+        }
         $entity = &$form_state['values'][$checkout_pane['pane_id']]['register_entities'][$prodkey][$i];
         $type = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['register_for'];
         $is_registered = FALSE;
