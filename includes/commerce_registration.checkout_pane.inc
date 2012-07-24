@@ -115,7 +115,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
         if (count($options) == 1 && isset($options[REGISTRATION_REGISTRANT_TYPE_ME])) {
           // User only has the option to register SELF.
           $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#type'] = 'hidden';
-          $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#value'] = REGISTRATION_REGISTRANT_TYPE_SELF;
+          $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#value'] = REGISTRATION_REGISTRANT_TYPE_ME;
         }
         // If user can register anonymous emails, then set the default value
         // of the anonymous email box to the current entity's value.
