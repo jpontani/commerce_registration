@@ -143,7 +143,8 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['registration_id']['field'] = 'registration_id';
   $handler->display->display_options['fields']['registration_id']['label'] = 'Number';
   $handler->display->display_options['fields']['registration_id']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['registration_id']['alter']['make_link'] = 0;
+  $handler->display->display_options['fields']['registration_id']['alter']['make_link'] = 1;
+  $handler->display->display_options['fields']['registration_id']['alter']['path'] = 'registration/[registration_id]';
   $handler->display->display_options['fields']['registration_id']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['registration_id']['alter']['external'] = 0;
   $handler->display->display_options['fields']['registration_id']['alter']['replace_spaces'] = 0;
