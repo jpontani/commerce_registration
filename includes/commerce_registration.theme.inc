@@ -73,11 +73,16 @@ function theme_commerce_registration_order($variables) {
       $user_col = l($user->name, $uri['path']);
     }
 
+    $link = $host_label;
+    if (isset($host_uri['path'])) {
+      $link = l($host_label, $host_uri['path']);
+    }
+
     $rows[] = array(
       l($registration->registration_id, 'registration/' . $registration->registration_id),
       l($registration->mail, 'mailto:' . $registration->mail),
       $user_col,
-      l($host_label, $host_uri['path']),
+      $link,
       $registration->count,
       format_date($registration->created),
       entity_label('registration_state', $registration->state)
