@@ -68,6 +68,12 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             $order->order_id
           );
         }
+
+        // $form[$prodkey][$prodkey . '-reg-' . $i] = registration_form(array(), $form_state[$prodkey . '-reg-' . $i], $entity);
+
+        // -------------------------------------------------------------------------
+        // All the following code can be deleted if we use the form builder from ER.
+        // -------------------------------------------------------------------------
         $mail = $entity->mail;
         $options = registration_access_people($entity);
         if (count($options) == 0) {
@@ -166,6 +172,7 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             );
           }
         }
+        // -------------------------------------------------------------------------
         $form['register_entities'][$prodkey][$i] = array(
           '#type' => 'value',
           '#value' => $entity,
@@ -213,6 +220,9 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
       $self_products = array();
       for ($i = 0; $i < $quantity; $i++) {
         $prodkey = 'prod-' . $product->sku->value();
+        // 
+        // $tmp_form_state['values'] = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i;
+        // Delete the following when we use ER's validation handler.
         if (isset($form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['no_reg_permission'])) {
           form_set_error("registration_information][" . $prodkey . "]["
               . $prodkey . "-reg-" . $i . "][no_reg",

@@ -74,6 +74,9 @@ function commerce_registration_node_registrations_settings_form($form, &$form_st
             '#collapsible' => TRUE,
             '#collapsed' => TRUE,
           );
+          if (!function_exists('registration_entity_settings_form')) {
+            module_load_include('inc', 'registration', 'includes/registration.forms');
+          }
           $addform = registration_entity_settings_form($form, $form_state, $settings, 'commerce_product', $product);
           unset($addform['save']);
           $addform['status']['#weight'] = -10;
