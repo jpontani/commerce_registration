@@ -302,6 +302,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
         $total_regs = 0;
         foreach ($form['product_id']['#options'] as $product_id => $title) {
           $product = commerce_product_load($product_id);
+          $wrapper = entity_metadata_wrapper('commerce_product', $product);
           $count++;
           if (commerce_registration_product_has_registration_field($product->product_id)) {
             $total_regs++;
@@ -316,16 +317,31 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
                 $form['product_id']['#options'][$product_id] = $title;
               }
               else {
+                $price = commerce_currency_format($wrapper->commerce_price->amount->value(),
+                  $wrapper->commerce_price->currency_code->value());
+                $selector = ($count == count($form['product_id']['#options']) ? "prev" : "next");
+                $form['product_id']['#attached']['js'] = array(
+                  '(function ($) { Drupal.behaviors.commerce_registration = { attach: function (context, settings) { $("select[name=\'product_id\'] option[value=\''
+                    . $product_id . '\']").attr(\'disabled\', \'disabled\'); $("select[name=\'product_id\'] option:selected").'
+                    . $selector . '(\'option\').attr(\'selected\', \'selected\'); $(window).load(function() { $("select[name=\'product_id\']").change(); }) } }; }) (jQuery);'
+                  => array('type' => 'inline'),
+                );
+                $form['unavailable']['product_unavailable_' . $product_id] = array(
+                  '#markup' => '<em>' . t('@product (@price)',
+                  array(
+                    '@product' => $product->title,
+                    '@price' => $price,
+                  )) . '</em>' . t(' is currently unavailable.'),
+                );
                 $disabled++;
               }
             }
           }
         }
         if ($disabled === $count && $total_regs == $count) {
-          $form['product_id']['#disabled'] = TRUE;
+          $form['product_id']['#type'] = 'hidden';
           unset($form['submit']);
           $form['unavailable'] = array(
-            '#type' => 'markup',
             '#markup' => t('There are no products available for registration at this time.'),
           );
         }
