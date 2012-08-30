@@ -272,8 +272,8 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
               );
               $ret = FALSE;
             }
-            if (isset($self_products[$product->product_id])
-              && $self_products[$product->product_id] == $user->uid) {
+            if (isset($self_products[$product->product_id->value()])
+              && $self_products[$product->product_id->value()] == $user->uid) {
               form_set_error("registration_information][" . $prodkey . "]["
                     . $prodkey . "-reg-" . $i . "][register_for",
                 t("You cannot register yourself for the same item more than once."));
@@ -282,7 +282,7 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
             else {
               // Set a flag that the current user is registering 'self' for
               // this product.
-              $self_products[$product->product_id] = $user->uid;
+              $self_products[$product->product_id->value()] = $user->uid;
             }
             break;
         }
