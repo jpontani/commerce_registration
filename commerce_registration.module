@@ -696,13 +696,15 @@ function commerce_registration_entity_view_alter(&$build, $type) {
  * Implements hook_form_FORM_ID_alter().
  */
 function commerce_registration_form_commerce_order_ui_order_form_alter(&$form, &$form_state, $form_id) {
+  $form['registration_settings'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#title' => t('Registration Settings'),
+    '#weight' => -6,
+    '#collapsed' => TRUE,
+  );
   if (isset($form_state['values']['commerce_line_items'])) {
-    $form['registration_settings'] = array(
-      '#type' => 'fieldset',
-      '#collapsible' => FALSE,
-      '#title' => t('Registration Settings'),
-      '#weight' => -6,
-    );
+    $form['registration_settings']['#collapsed'] = FALSE;
     $products = array();
     foreach ($form_state['values']['commerce_line_items'] as $lang => $items) {
       foreach ($items as $index => $data) {
@@ -719,13 +721,14 @@ function commerce_registration_form_commerce_order_ui_order_form_alter(&$form, &
     }
     $override_title = variable_get('commerce_registration_product_title', NULL);
     $settings_form = array();
-    $show_settings = FALSE;
+    $show_settings = TRUE;
+    $label = 1;
     foreach ($products as $product_id => $quantity) {
       if (registration_status('commerce_product', $product_id, TRUE) == 1) {
         $product = commerce_product_load((int) $product_id);
         $product = entity_metadata_wrapper('commerce_product', $product);
         $show_settings = TRUE;
-        $title = check_plain($product->title->value() . ' - Registrant #' . $label);
+        $title = check_plain($product->title->value() . ' - Registrant #' . $label++);
         for ($i = 0; $i < $quantity; $i++) {
           if (isset($override_title)) {
             $label = $i + 1;
@@ -733,13 +736,16 @@ function commerce_registration_form_commerce_order_ui_order_form_alter(&$form, &
             $title = str_replace('[index]', $label, $title);
           }
           $form['registration_settings']['prod-' . $product_id . '-' . $i] = array(
+            '#markup' => t('Tester'),
+          );
+          /*$form['registration_settings']['prod-' . $product_id . '-' . $i] = array(
             '#type' => 'fieldset',
             '#collapsible' => TRUE,
             '#collapsed' => TRUE,
             '#title' => $title,
             '#tree' => TRUE,
             '#description' => variable_get('commerce_registration_registrant_help', ''),
-          );
+          );*/
           $bundle = registration_get_entity_registration_type('commerce_product',
             $product->value());
           if (!function_exists('commerce_registration_create_product_registration')) {
@@ -750,18 +756,20 @@ function commerce_registration_form_commerce_order_ui_order_form_alter(&$form, &
             $bundle,
             0
           );
+          /*
           field_attach_form(
             'registration',
             $entity,
             $form['registration_settings']['prod-' . $product_id . '-' . $i],
             $form_state
           );
+          */
         }
       }
     }
     if (!$show_settings) {
       unset($form['registration_settings']);
     }
-    dsm($form);
+    $form_state['rebuild'] = TRUE;
   }
 }

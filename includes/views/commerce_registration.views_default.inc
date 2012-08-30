@@ -88,7 +88,7 @@ function commerce_registration_views_default_views() {
     $handler->display->display_options['fields']['views_bulk_operations']['vbo']['operations'] = array(
       'views_bulk_operations_delete_item' => array(
         'selected' => 1,
-        'use_queue' => 1,
+        'use_queue' => 0,
         'skip_confirmation' => 0,
         'override_label' => 0,
         'label' => '',

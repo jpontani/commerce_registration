@@ -182,22 +182,9 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
   }
   if (!$show_form) {
     // No register enabled products, so go to next step of checkout process.
-    $order_status = commerce_order_status_load($order->status);
-    if ($order_status['state'] == 'checkout' && $order_status['checkout_page'] == 'registration') {
-      $this_page = commerce_checkout_page_load($order_status['checkout_page']);
-      $next_page = $this_page['next_page'];
-      if ($order->log == "Customer returned to the previous checkout page via a submit button.") {
-        // Not sure how else to check to see if they went back instead of
-        // forwards.
-        $next_page = $this_page['prev_page'];
-      }
-      $order = commerce_order_status_update($order, 'checkout_' . $next_page);
-      // Inform modules of checkout completion if the next page is Completed.
-      if ($next_page == 'complete') {
-        commerce_checkout_complete($order);
-      }
-      drupal_goto('checkout/' . $order->order_id . '/' . $next_page);
-    }
+    $form['no_reg_products'] = array(
+      '#markup' => t('No information required. You may skip this page.'),
+    );
   }
   return $form;
 }
