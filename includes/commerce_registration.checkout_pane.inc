@@ -68,9 +68,6 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
             $order->order_id
           );
         }
-
-        // $form[$prodkey][$prodkey . '-reg-' . $i] = registration_form(array(), $form_state[$prodkey . '-reg-' . $i], $entity);
-
         // -------------------------------------------------------------------------
         // All the following code can be deleted if we use the form builder from ER.
         // -------------------------------------------------------------------------
@@ -86,70 +83,24 @@ function commerce_registration_information_checkout_form($form, &$form_state, $c
           );
           return $form;
         }
-        $form[$prodkey][$prodkey . '-reg-' . $i]['register_for'] = array(
-          '#type' => 'select',
-          '#title' => t('This registration is for:'),
-          '#options' => $options,
-          '#default_value' => isset($entity->register_for) ? $entity->register_for : NULL,
-          '#required' => TRUE,
-          '#weight' => -50
-        );
+        $tmp_form_state = array();
+        $register_form = registration_form($form, $tmp_form_state, $entity);
+        // Copy fields from the registration form so we don't duplicate functionality.
+        if (isset($register_form['who_message'])) {
+          $form[$prodkey][$prodkey . '-reg-' . $i]['who_message'] = $register_form['who_message'];
+        }
+        $form[$prodkey][$prodkey . '-reg-' . $i]['register_for'] = $register_form['who_is_registering'];
         $find_name = "registration_information[$prodkey][$prodkey-reg-$i][register_for]";
-        // If user can register other users.
-        $user_default = '';
-        if (isset($entity->register_for) &&
-          $entity->register_for == REGISTRATION_REGISTRANT_TYPE_USER) {
-          if (isset($entity->user)) {
-            $user_default = $entity->user;
-          }
-        }
-        $form[$prodkey][$prodkey . '-reg-' . $i]['user'] = array(
-          '#type' => 'textfield',
-          '#title' => t('User'),
-          '#default_value' => $user_default,
-          '#maxlength' => 60,
-          '#size' => 30,
-          '#description' => t('Select a user by typing their username to get a list of matches.'),
-          '#autocomplete_path' => 'user/autocomplete',
-          '#access' => isset($options[REGISTRATION_REGISTRANT_TYPE_USER]),
-          '#states' => array(
-            'visible' => array(
-              ':input[name="' . $find_name . '"]' => array('value' => REGISTRATION_REGISTRANT_TYPE_USER),
-            ),
+        $form[$prodkey][$prodkey . '-reg-' . $i]['user'] = $register_form['user'];
+        $form[$prodkey][$prodkey . '-reg-' . $i]['user']['#states'] = array(
+          'visible' => array(
+            ':input[name="' . $find_name . '"]' => array('value' => REGISTRATION_REGISTRANT_TYPE_USER),
           ),
         );
-        if (count($options) == 1 && isset($options[REGISTRATION_REGISTRANT_TYPE_ME])) {
-          // User only has the option to register SELF.
-          $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#type'] = 'hidden';
-          $form[$prodkey][$prodkey . '-reg-' . $i]['register_for']['#value'] = REGISTRATION_REGISTRANT_TYPE_ME;
-        }
-        // If user can register anonymous emails, then set the default value
-        // of the anonymous email box to the current entity's value.
-        // This allows users to go forward and backward in the checkout process
-        // without losing any registrant information.
-        $anon_default = '';
-        if (isset($entity->register_for) &&
-          $entity->register_for == REGISTRATION_REGISTRANT_TYPE_ANON) {
-          if (isset($entity->anon_mail)) {
-            $anon_default = $entity->anon_mail;
-          }
-        }
-        $form[$prodkey][$prodkey . '-reg-' . $i]['anon_mail'] = array(
-          '#weight' => -49,
-          '#type' => 'textfield',
-          '#title' => t('Email Address'),
-          '#default_value' => $anon_default,
-          '#access' => isset($options[REGISTRATION_REGISTRANT_TYPE_ANON]),
-          '#parents' => array(
-            'registration_information',
-            $prodkey,
-            $prodkey . '-reg-' . $i,
-            'anon_mail',
-          ),
-          '#states' => array(
-            'visible' => array(
-              ':input[name="' . $find_name .'"]' => array('value' => REGISTRATION_REGISTRANT_TYPE_ANON),
-            ),
+        $form[$prodkey][$prodkey . '-reg-' . $i]['anon_mail'] = $register_form['anon_mail'];
+        $form[$prodkey][$prodkey . '-reg-' . $i]['anon_mail']['#states'] = array(
+          'visible' => array(
+            ':input[name="' . $find_name .'"]' => array('value' => REGISTRATION_REGISTRANT_TYPE_ANON),
           ),
         );
         // Attach the entity's fields to the form.
@@ -466,7 +417,6 @@ function commerce_registration_create_product_registration($product_id, $bundle,
   $entity->registration_id = 0;
   $entity->entity_type = 'commerce_product';
   $entity->entity_id = $product_id;
-  $entity->entity = entity_load_single($entity->entity_type, $entity->entity_id);
   $entity->created = REQUEST_TIME;
   $entity->updated = REQUEST_TIME;
   $entity->author_uid = $user->uid;
