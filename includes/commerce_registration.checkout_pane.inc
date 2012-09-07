@@ -182,6 +182,14 @@ function commerce_registration_information_checkout_form_validate($form, &$form_
               );
               $ret = FALSE;
             }
+            elseif (empty($mail) || !valid_email_address($mail)) {
+              form_set_error(
+                "registration_information][" . $prodkey . "]["
+                    . $prodkey . "-reg-" . $i . "][anon_mail",
+                  t("You must provide a valid email address.")
+              );
+              $ret = FALSE;
+            }
             elseif (in_array($mail, $emails)) {
               form_set_error(
                 "registration_information][" . $prodkey . "]["
@@ -276,22 +284,15 @@ function commerce_registration_information_checkout_form_submit($form, &$form_st
         $is_registered = FALSE;
         switch ($type) {
           case REGISTRATION_REGISTRANT_TYPE_ANON:
-            $entity->mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['anon_mail'];
-            $entity->user_uid = 0;
-            $entity->user = '';
+            $entity->anon_mail = $form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['anon_mail'];
             break;
           case REGISTRATION_REGISTRANT_TYPE_USER:
             $account = user_load_by_name($form_state['values']['registration_information'][$prodkey][$prodkey . '-reg-' . $i]['user']);
-            $entity->mail = $account->mail;
             $entity->user_uid = $account->uid;
-            $entity->anon_mail = '';
             break;
           case REGISTRATION_REGISTRANT_TYPE_ME:
             global $user;
-            $entity->mail = $user->mail;
             $entity->user_uid = $user->uid;
-            $entity->anon_mail = '';
-            $entity->user = '';
             break;
         }
         // Notify the field API that values were submitted.
