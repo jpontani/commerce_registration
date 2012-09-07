@@ -8,7 +8,7 @@
  * Implements hook_views_default_views().
  */
 function commerce_registration_views_default_views() {
-  $view = new view();
+  $view = new view;
   $view->name = 'commerce_registration_admin_regs';
   $view->description = '';
   $view->tag = 'default';
@@ -60,91 +60,19 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['relationships']['order_id']['id'] = 'order_id';
   $handler->display->display_options['relationships']['order_id']['table'] = 'registration';
   $handler->display->display_options['relationships']['order_id']['field'] = 'order_id';
-  $handler->display->display_options['relationships']['order_id']['required'] = 1;
-  
-  if (module_exists('views_bulk_operations')) {
-    /* Field: Registration: Bulk operations */
-    $handler->display->display_options['fields']['views_bulk_operations']['id'] = 'views_bulk_operations';
-    $handler->display->display_options['fields']['views_bulk_operations']['table'] = 'registration';
-    $handler->display->display_options['fields']['views_bulk_operations']['field'] = 'views_bulk_operations';
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['alter_text'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['make_link'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['absolute'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['external'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['replace_spaces'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['trim_whitespace'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['nl2br'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['word_boundary'] = 1;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['ellipsis'] = 1;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['strip_tags'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['trim'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['alter']['html'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['element_label_colon'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['element_default_classes'] = 1;
-    $handler->display->display_options['fields']['views_bulk_operations']['hide_empty'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['empty_zero'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['hide_alter_empty'] = 1;
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['entity_load_capacity'] = '10';
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['operations'] = array(
-      'views_bulk_operations_delete_item' => array(
-        'selected' => 1,
-        'use_queue' => 0,
-        'skip_confirmation' => 0,
-        'override_label' => 0,
-        'label' => '',
-      ),
-      'system_message_action' => array(
-        'selected' => 0,
-        'use_queue' => 0,
-        'skip_confirmation' => 0,
-        'override_label' => 0,
-        'label' => '',
-      ),
-      'views_bulk_operations_script_action' => array(
-        'selected' => 0,
-        'use_queue' => 0,
-        'skip_confirmation' => 0,
-        'override_label' => 0,
-        'label' => '',
-      ),
-      'views_bulk_operations_argument_selector_action' => array(
-        'selected' => 0,
-        'skip_confirmation' => 0,
-        'override_label' => 0,
-        'label' => '',
-        'settings' => array(
-          'url' => '',
-        ),
-      ),
-      'system_goto_action' => array(
-        'selected' => 0,
-        'use_queue' => 0,
-        'skip_confirmation' => 0,
-        'override_label' => 0,
-        'label' => '',
-      ),
-      'system_send_email_action' => array(
-        'selected' => 0,
-        'use_queue' => 0,
-        'skip_confirmation' => 0,
-        'override_label' => 0,
-        'label' => '',
-      ),
-    );
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['enable_select_all_pages'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_type'] = '0';
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 0;
-    $handler->display->display_options['fields']['views_bulk_operations']['vbo']['force_single'] = 0;
-  }
+  $handler->display->display_options['relationships']['order_id']['required'] = 0;
+  /* Relationship: Registration: State entity */
+  $handler->display->display_options['relationships']['state']['id'] = 'state';
+  $handler->display->display_options['relationships']['state']['table'] = 'registration';
+  $handler->display->display_options['relationships']['state']['field'] = 'state';
+  $handler->display->display_options['relationships']['state']['required'] = 0;
   /* Field: Registration: Registration ID */
   $handler->display->display_options['fields']['registration_id']['id'] = 'registration_id';
   $handler->display->display_options['fields']['registration_id']['table'] = 'registration';
   $handler->display->display_options['fields']['registration_id']['field'] = 'registration_id';
   $handler->display->display_options['fields']['registration_id']['label'] = 'Number';
   $handler->display->display_options['fields']['registration_id']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['registration_id']['alter']['make_link'] = 1;
-  $handler->display->display_options['fields']['registration_id']['alter']['path'] = 'registration/[registration_id]';
+  $handler->display->display_options['fields']['registration_id']['alter']['make_link'] = 0;
   $handler->display->display_options['fields']['registration_id']['alter']['absolute'] = 0;
   $handler->display->display_options['fields']['registration_id']['alter']['external'] = 0;
   $handler->display->display_options['fields']['registration_id']['alter']['replace_spaces'] = 0;
@@ -162,7 +90,7 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['registration_id']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['registration_id']['separator'] = '';
   $handler->display->display_options['fields']['registration_id']['format_plural'] = 0;
-  /* Field: Registration: Created */
+  /* Field: Registration: Date created */
   $handler->display->display_options['fields']['created']['id'] = 'created';
   $handler->display->display_options['fields']['created']['table'] = 'registration';
   $handler->display->display_options['fields']['created']['field'] = 'created';
@@ -185,54 +113,6 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['created']['empty_zero'] = 0;
   $handler->display->display_options['fields']['created']['hide_alter_empty'] = 1;
   $handler->display->display_options['fields']['created']['date_format'] = 'long';
-  /* Field: Registration: Entity_type */
-  $handler->display->display_options['fields']['entity_type']['id'] = 'entity_type';
-  $handler->display->display_options['fields']['entity_type']['table'] = 'registration';
-  $handler->display->display_options['fields']['entity_type']['field'] = 'entity_type';
-  $handler->display->display_options['fields']['entity_type']['label'] = '';
-  $handler->display->display_options['fields']['entity_type']['exclude'] = TRUE;
-  $handler->display->display_options['fields']['entity_type']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['make_link'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['absolute'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['external'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['replace_spaces'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['trim_whitespace'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['nl2br'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['entity_type']['alter']['ellipsis'] = 1;
-  $handler->display->display_options['fields']['entity_type']['alter']['strip_tags'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['entity_type']['alter']['html'] = 0;
-  $handler->display->display_options['fields']['entity_type']['element_label_colon'] = FALSE;
-  $handler->display->display_options['fields']['entity_type']['element_default_classes'] = 1;
-  $handler->display->display_options['fields']['entity_type']['hide_empty'] = 0;
-  $handler->display->display_options['fields']['entity_type']['empty_zero'] = 0;
-  $handler->display->display_options['fields']['entity_type']['hide_alter_empty'] = 1;
-  /* Field: Registration: Entity_id */
-  $handler->display->display_options['fields']['entity_id']['id'] = 'entity_id';
-  $handler->display->display_options['fields']['entity_id']['table'] = 'registration';
-  $handler->display->display_options['fields']['entity_id']['field'] = 'entity_id';
-  $handler->display->display_options['fields']['entity_id']['label'] = '';
-  $handler->display->display_options['fields']['entity_id']['exclude'] = TRUE;
-  $handler->display->display_options['fields']['entity_id']['alter']['alter_text'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['make_link'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['absolute'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['external'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['replace_spaces'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['trim_whitespace'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['nl2br'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['word_boundary'] = 1;
-  $handler->display->display_options['fields']['entity_id']['alter']['ellipsis'] = 1;
-  $handler->display->display_options['fields']['entity_id']['alter']['strip_tags'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['trim'] = 0;
-  $handler->display->display_options['fields']['entity_id']['alter']['html'] = 0;
-  $handler->display->display_options['fields']['entity_id']['element_label_colon'] = FALSE;
-  $handler->display->display_options['fields']['entity_id']['element_default_classes'] = 1;
-  $handler->display->display_options['fields']['entity_id']['hide_empty'] = 0;
-  $handler->display->display_options['fields']['entity_id']['empty_zero'] = 0;
-  $handler->display->display_options['fields']['entity_id']['hide_alter_empty'] = 1;
-  $handler->display->display_options['fields']['entity_id']['separator'] = '';
-  $handler->display->display_options['fields']['entity_id']['format_plural'] = 0;
   /* Field: Registration: Attached Commerce Product */
   $handler->display->display_options['fields']['registration_attached_entity']['id'] = 'registration_attached_entity';
   $handler->display->display_options['fields']['registration_attached_entity']['table'] = 'registration';
@@ -331,16 +211,41 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['fields']['status']['hide_empty'] = 0;
   $handler->display->display_options['fields']['status']['empty_zero'] = 0;
   $handler->display->display_options['fields']['status']['hide_alter_empty'] = 1;
-  /* Sort criterion: Registration: Created */
+  /* Field: Registration State: Label */
+  $handler->display->display_options['fields']['label']['id'] = 'label';
+  $handler->display->display_options['fields']['label']['table'] = 'registration_state';
+  $handler->display->display_options['fields']['label']['field'] = 'label';
+  $handler->display->display_options['fields']['label']['relationship'] = 'state';
+  $handler->display->display_options['fields']['label']['label'] = 'Registration state';
+  $handler->display->display_options['fields']['label']['alter']['alter_text'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['make_link'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['absolute'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['external'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['replace_spaces'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['trim_whitespace'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['nl2br'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['word_boundary'] = 1;
+  $handler->display->display_options['fields']['label']['alter']['ellipsis'] = 1;
+  $handler->display->display_options['fields']['label']['alter']['more_link'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['strip_tags'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['trim'] = 0;
+  $handler->display->display_options['fields']['label']['alter']['html'] = 0;
+  $handler->display->display_options['fields']['label']['element_label_colon'] = 0;
+  $handler->display->display_options['fields']['label']['element_default_classes'] = 1;
+  $handler->display->display_options['fields']['label']['hide_empty'] = 0;
+  $handler->display->display_options['fields']['label']['empty_zero'] = 0;
+  $handler->display->display_options['fields']['label']['hide_alter_empty'] = 1;
+  /* Sort criterion: Registration: Date created */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'registration';
   $handler->display->display_options['sorts']['created']['field'] = 'created';
   $handler->display->display_options['sorts']['created']['order'] = 'DESC';
-  /* Filter criterion: Registration: Entity_type */
-  $handler->display->display_options['filters']['entity_type']['id'] = 'entity_type';
-  $handler->display->display_options['filters']['entity_type']['table'] = 'registration';
-  $handler->display->display_options['filters']['entity_type']['field'] = 'entity_type';
-  $handler->display->display_options['filters']['entity_type']['value'] = 'commerce_product';
+  /* Filter criterion: Registration State: Label */
+  $handler->display->display_options['filters']['label']['id'] = 'label';
+  $handler->display->display_options['filters']['label']['table'] = 'registration_state';
+  $handler->display->display_options['filters']['label']['field'] = 'label';
+  $handler->display->display_options['filters']['label']['relationship'] = 'state';
+  $handler->display->display_options['filters']['label']['value'] = 'Complete';
 
   /* Display: Completed Registrations with Order ID */
   $handler = $view->new_display('block', 'Completed Registrations with Order ID', 'commerce_regs_w_order');
@@ -355,6 +260,12 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['relationships']['order_id']['table'] = 'registration';
   $handler->display->display_options['relationships']['order_id']['field'] = 'order_id';
   $handler->display->display_options['relationships']['order_id']['required'] = 0;
+  /* Relationship: Registration: State entity */
+  $handler->display->display_options['relationships']['state']['id'] = 'state';
+  $handler->display->display_options['relationships']['state']['table'] = 'registration';
+  $handler->display->display_options['relationships']['state']['field'] = 'state';
+  $handler->display->display_options['relationships']['state']['required'] = 0;
+  $handler->display->display_options['defaults']['filters'] = FALSE;
 
   $views['commerce_registration_admin_registrations'] = $view;
 
