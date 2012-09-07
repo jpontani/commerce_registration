@@ -66,6 +66,28 @@ function commerce_registration_views_default_views() {
   $handler->display->display_options['relationships']['state']['table'] = 'registration';
   $handler->display->display_options['relationships']['state']['field'] = 'state';
   $handler->display->display_options['relationships']['state']['required'] = 0;
+  /* Field: Registration: View link */
+  $handler->display->display_options['fields']['view_registration']['id'] = 'view_registration';
+  $handler->display->display_options['fields']['view_registration']['table'] = 'registration';
+  $handler->display->display_options['fields']['view_registration']['field'] = 'view_registration';
+  $handler->display->display_options['fields']['view_registration']['label'] = '';
+  $handler->display->display_options['fields']['view_registration']['alter']['alter_text'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['make_link'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['absolute'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['replace_spaces'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['trim_whitespace'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['nl2br'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['word_boundary'] = 1;
+  $handler->display->display_options['fields']['view_registration']['alter']['ellipsis'] = 1;
+  $handler->display->display_options['fields']['view_registration']['alter']['more_link'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['strip_tags'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['trim'] = 0;
+  $handler->display->display_options['fields']['view_registration']['alter']['html'] = 0;
+  $handler->display->display_options['fields']['view_registration']['element_label_colon'] = FALSE;
+  $handler->display->display_options['fields']['view_registration']['element_default_classes'] = 1;
+  $handler->display->display_options['fields']['view_registration']['hide_empty'] = 0;
+  $handler->display->display_options['fields']['view_registration']['empty_zero'] = 0;
+  $handler->display->display_options['fields']['view_registration']['hide_alter_empty'] = 1;
   /* Field: Registration: Registration ID */
   $handler->display->display_options['fields']['registration_id']['id'] = 'registration_id';
   $handler->display->display_options['fields']['registration_id']['table'] = 'registration';
