@@ -372,7 +372,7 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
           if (!$showavail) {
             unset($form['capacity']);
           }
-          if (registration_has_room($product->product_id, 'commerce_product')) {
+          if (registration_has_room('commerce_product', $product->product_id)) {
             $form['submit'] = $submit;
           }
           else {
@@ -390,60 +390,62 @@ function commerce_registration_form_alter(&$form, &$form_state, $form_id) {
   elseif (substr($form_id, 0, 32) == 'commerce_product_ui_product_form') {
     // Add settings to Commerce Product Add/Edit Form.
     $product = $form_state['commerce_product'];
-    $settings = registration_entity_settings('commerce_product', $product->product_id);
-    if (commerce_registration_product_has_registration_field($product->product_id)) {
-      if (!function_exists("registration_entity_settings_form_validate")) {
-        form_load_include($form_state,'inc', 'registration', 'includes/registration.forms');
-      }
-      if (!function_exists("commerce_registration_registration_settings_form_validate")) {
-        form_load_include($form_state,'inc', 'commerce_registration', 'includes/commerce_registration.forms');
-      }
-      // Add validation and submission handlers to the form.
-      $form['#validate'][] = "commerce_registration_registration_settings_form_validate";
-      $form['actions']['submit']['#submit'][] = "commerce_registration_registration_settings_form_submit";
-      $collapsed = (empty($form['field_registration'][LANGUAGE_NONE]['0']['registration_type']['#default_value']['registration_type'])
-        ? TRUE : FALSE);
-      $form['registration_settings'] = array(
-        '#title' => t('Registration Settings'),
-        '#type' => "fieldset",
-        '#collapsible' => TRUE,
-        '#collapsed' => $collapsed,
-        '#weight' => 45,
-        '#tree' => TRUE,
-        '#states' => array(
-          'collapsed' => array(
-            ':input[name="field_registration[und][0][registration_type]"]' => array(
-              'value' => '',
+    if (isset($product->product_id)) {
+      $settings = registration_entity_settings('commerce_product', $product->product_id);
+      if (commerce_registration_product_has_registration_field($product->product_id)) {
+        if (!function_exists("registration_entity_settings_form_validate")) {
+          form_load_include($form_state,'inc', 'registration', 'includes/registration.forms');
+        }
+        if (!function_exists("commerce_registration_registration_settings_form_validate")) {
+          form_load_include($form_state,'inc', 'commerce_registration', 'includes/commerce_registration.forms');
+        }
+        // Add validation and submission handlers to the form.
+        $form['#validate'][] = "commerce_registration_registration_settings_form_validate";
+        $form['actions']['submit']['#submit'][] = "commerce_registration_registration_settings_form_submit";
+        $collapsed = (empty($form['field_registration'][LANGUAGE_NONE]['0']['registration_type']['#default_value']['registration_type'])
+          ? TRUE : FALSE);
+        $form['registration_settings'] = array(
+          '#title' => t('Registration Settings'),
+          '#type' => "fieldset",
+          '#collapsible' => TRUE,
+          '#collapsed' => $collapsed,
+          '#weight' => 45,
+          '#tree' => TRUE,
+          '#states' => array(
+            'collapsed' => array(
+              ':input[name="field_registration[und][0][registration_type]"]' => array(
+                'value' => '',
+              ),
             ),
           ),
-        ),
-      );
-      // Grab the registration settings form for this entity.
-      $addform = registration_entity_settings_form(array(), $form_state, $settings, "commerce_product", $product);
-      // Remove the save button for this form since we have one already.
-      unset($addform['save']);
-      // We rename the registration settings form's status field to be reg_status
-      // so our validation and submission doesn't overwrite the product's status.
-      $addform['reg_status'] = $addform['status'];
-      $addform['reg_status']['#weight'] = -20;
-      unset($addform['status']);
-      // Add parents to each registration setting so we can get the values.
-      foreach ($addform as $key => $array) {
-        $addform[$key]['#parents'] = array('registration_settings', $key);
+        );
+        // Grab the registration settings form for this entity.
+        $addform = registration_entity_settings_form(array(), $form_state, $settings, "commerce_product", $product);
+        // Remove the save button for this form since we have one already.
+        unset($addform['save']);
+        // We rename the registration settings form's status field to be reg_status
+        // so our validation and submission doesn't overwrite the product's status.
+        $addform['reg_status'] = $addform['status'];
+        $addform['reg_status']['#weight'] = -20;
+        unset($addform['status']);
+        // Add parents to each registration setting so we can get the values.
+        foreach ($addform as $key => $array) {
+          $addform[$key]['#parents'] = array('registration_settings', $key);
+        }
+        // Add the registration settings form to the base form.
+        $form['registration_settings'] += $addform;
+        $form['registration_settings']['reminder']['#parents'] = array('registration_settings', 'reminder');
+        $form['registration_settings']['reminder']['reminder_settings']['#states']['visible'] = array(
+          ':input[name="registration_settings[send_reminder]"]' => array(
+            'checked' => TRUE,
+          ),
+        );
+        $form['registration_settings']['settings']['hide_from_display'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Hide Manage Registrations tab from product display nodes'),
+          '#default_value' => (isset($settings['settings']['hide_from_display']) ? $settings['settings']['hide_from_display'] : 0),
+        );
       }
-      // Add the registration settings form to the base form.
-      $form['registration_settings'] += $addform;
-      $form['registration_settings']['reminder']['#parents'] = array('registration_settings', 'reminder');
-      $form['registration_settings']['reminder']['reminder_settings']['#states']['visible'] = array(
-        ':input[name="registration_settings[send_reminder]"]' => array(
-          'checked' => TRUE,
-        ),
-      );
-      $form['registration_settings']['settings']['hide_from_display'] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Hide Manage Registrations tab from product display nodes'),
-        '#default_value' => (isset($settings['settings']['hide_from_display']) ? $settings['settings']['hide_from_display'] : 0),
-      );
     }
   }
   elseif (substr($form_id, -9) == 'node_form') {
